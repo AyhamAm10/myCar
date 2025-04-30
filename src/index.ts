@@ -9,6 +9,7 @@ import { logger } from "./logging/logger";
 import { AppDataSource } from "./config/data_source";
 import { authRouter } from "./router/auth.route";
 import { createSuperAdmin } from "./config/create-super-admin";
+import { swaggerDoc } from "./helper/swaggerOptions";
 
 dotenv.config();
 const app = express();
@@ -38,6 +39,8 @@ app.use(process.env.BASE_URL ?? "/", router);
 app.use(errorHandler );
 
 const PORT = Number(process.env.PORT);
+
+swaggerDoc(app);
 
 logger.info(`NODE_ENV: ${Environment.toString()}`);
 

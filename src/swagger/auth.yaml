@@ -1,0 +1,241 @@
+openapi: 3.0.0
+info:
+  title: Authentication API
+  description: API for user authentication and authorization
+  version: 1.0.0
+servers:
+  - url: http://localhost:8800/api
+    description: Local development server
+  - url: https://api.yourdomain.com
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: Operations related to user authentication
+
+paths:
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register a new user
+      description: Create a new user account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterUser'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Bad request (validation error)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '409':
+          description: Conflict (user already exists)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Authenticate user
+      description: Log in with existing credentials
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginUser'
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: refreshToken=abc123; HttpOnly; Path=/; Max-Age=604800
+        '401':
+          description: Unauthorized (invalid credentials)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Log out user
+      description: Invalidate user session
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successfully logged out
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Logged out successfully"
+        '401':
+          description: Unauthorized (not authenticated)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/refresh:
+    post:
+      tags: [Authentication]
+      summary: Refresh access token
+      description: Get new access token using refresh token
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: New tokens generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshResponse'
+        '401':
+          description: Unauthorized (invalid/expired refresh token)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    RegisterUser:
+      type: object
+      required:
+        - name
+        - phone
+        - password
+      properties:
+        name:
+          type: string
+          example: "John Doe"
+        phone:
+          type: string
+          example: "963991234567"
+        password:
+          type: string
+          format: password
+          example: "SecurePassword123!"
+
+    LoginUser:
+      type: object
+      required:
+        - phone
+        - password
+      properties:
+        phone:
+          type: string
+          example: "963991234567"
+        password:
+          type: string
+          format: password
+          example: "SecurePassword123!"
+
+    AuthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        accessToken:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        user:
+          $ref: '#/components/schemas/User'
+
+    RefreshResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        accessToken:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "John Doe"
+        phone:
+          type: string
+          example: "963991234567"
+        role:
+          type: string
+          enum: [user, admin, super_admin]
+          example: "user"
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        errorType:
+          type: string
+          example: "validation_error"
+        message:
+          type: string
+          example: "Validation failed"
+        details:
+          type: object
+          nullable: true
+
+    ValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            errors:
+              type: array
+              items:
+                type: object
+                properties:
+                  path:
+                    type: string
+                    example: "phone"
+                  message:
+                    type: string
+                    example: "Invalid phone number format"
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: refreshToken
