@@ -1,0 +1,146 @@
+openapi: 3.0.0
+info:
+  title: User Profile API
+  description: API for managing user profile information
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000/api
+    description: Development server
+  - url: https://api.example.com/v1
+    description: Production server
+tags:
+  - name: Profile
+    description: User profile operations
+paths:
+  /profile:
+    put:
+      tags:
+        - Profile
+      summary: Update user profile
+      description: Update the authenticated user's profile information
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: John Doe
+                  description: User's full name
+                phone:
+                  type: string
+                  example: "+1234567890"
+                  description: User's phone number (must be unique)
+                image:
+                  type: string
+                  format: binary
+                  description: Profile image file (JPEG/PNG)
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: true
+                message: "Profile updated successfully"
+                data:
+                  user:
+                    id: 1
+                    name: "John Doe"
+                    phone: "+1234567890"
+                    image: "profile-123456789.jpg"
+                    verified: false
+                    role: "user"
+                    deviceToken: null
+                    createdAt: "2023-01-01T00:00:00.000Z"
+                    updatedAt: "2023-01-02T00:00:00.000Z"
+        '400':
+          description: Bad request (phone already exists)
+          content:
+            application/json:
+              example:
+                success: false
+                message: "Phone already exists"
+                statusCode: 400
+        '401':
+          description: Unauthorized (invalid/missing token)
+          content:
+            application/json:
+              example:
+                success: false
+                message: "Unauthorized"
+                statusCode: 401
+        '404':
+          description: User not found
+          content:
+            application/json:
+              example:
+                success: false
+                message: "User not found"
+                statusCode: 404
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              example:
+                success: false
+                message: "Internal server error"
+                statusCode: 500
+components:
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "John Doe"
+        phone:
+          type: string
+          example: "+1234567890"
+        image:
+          type: string
+          nullable: true
+          example: "profile-123456789.jpg"
+        verified:
+          type: boolean
+          example: false
+        role:
+          type: string
+          enum: ["super_admin", "admin", "user"]
+          example: "user"
+        deviceToken:
+          type: string
+          nullable: true
+          example: null
+        createdAt:
+          type: string
+          format: date-time
+          example: "2023-01-01T00:00:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2023-01-02T00:00:00.000Z"
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for authentication

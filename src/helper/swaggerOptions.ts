@@ -32,6 +32,7 @@ const options: swaggerJsdoc.Options = {
   
   apis: [
     "./src/swagger/auth.yaml",
+    "./src/swagger/profile.yaml",
   ],
 };
 
