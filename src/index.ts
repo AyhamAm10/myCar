@@ -10,6 +10,7 @@ import { AppDataSource } from "./config/data_source";
 import { authRouter } from "./router/auth.route";
 import { createSuperAdmin } from "./config/create-super-admin";
 import { swaggerDoc } from "./helper/swaggerOptions";
+import { profileRouter } from "./router/profile.route";
 
 dotenv.config();
 const app = express();
@@ -34,6 +35,8 @@ router.get("/", (req, res) => {
 });
 
 router.use("/auth", authRouter);
+router.use("/profile", profileRouter);
+
 app.use(process.env.BASE_URL ?? "/", router);
 
 app.use(errorHandler );

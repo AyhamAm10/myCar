@@ -9,13 +9,12 @@ export class ProfileController {
   private userRepository = AppDataSource.getRepository(User);
 
   async updateProfile(req: Request, res: Response, next: NextFunction) {
-
+    console.log(req.body)
     try {
       const userId = req.user.id;
       const updateData = req.body;
       const { phone, name , ...secureData } = updateData;
       const image = req.file ? req.file.filename : null;
-
       const user = await this.userRepository.findOne({
         where: { id: userId }
       });
