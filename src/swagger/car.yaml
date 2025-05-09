@@ -1,0 +1,401 @@
+openapi: 3.0.0
+info:
+  title: Cars Management API
+  description: API for managing cars with attributes
+  version: 1.1.0
+servers:
+  - url: http://localhost:3000/api
+    description: Development server
+tags:
+  - name: Cars
+    description: Operations related to cars management
+
+paths:
+  /cars:
+    get:
+      tags: [Cars]
+      summary: Get all cars with filters
+      parameters:
+        - $ref: '#/components/parameters/acceptLanguage'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, sold, hidden]
+        - name: carType
+          in: query
+          schema:
+            type: integer
+        - name: governorate
+          in: query
+          schema:
+            type: string
+        - name: minPrice
+          in: query
+          schema:
+            type: number
+        - name: maxPrice
+          in: query
+          schema:
+            type: number
+        - name: isFeatured
+          in: query
+          schema:
+            type: boolean
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: List of cars with pagination
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Car'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags: [Cars]
+      summary: Create a new car with attributes
+      consumes:
+        - multipart/form-data
+      parameters:
+        - $ref: '#/components/parameters/acceptLanguage'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                images:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                usdPrice:
+                  type: number
+                sypPrice:
+                  type: number
+                carTypeId:
+                  type: integer
+                governorate:
+                  type: string
+                address:
+                  type: string
+                lat:
+                  type: number
+                long:
+                  type: number
+                attributes:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CarAttributeInput'
+      responses:
+        '201':
+          description: Car created successfully with attributes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  car:
+                    $ref: '#/components/schemas/Car'
+                  attributes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CarAttribute'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Not Found (User, CarType or Governorate not found)
+
+  /cars/{id}:
+    get:
+      tags: [Cars]
+      summary: Get car by ID (increments view count)
+      parameters:
+        - $ref: '#/components/parameters/acceptLanguage'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Car details with attributes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CarDetails'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Cars]
+      summary: Update a car and its attributes
+      consumes:
+        - multipart/form-data
+      parameters:
+        - $ref: '#/components/parameters/acceptLanguage'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                images:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                usdPrice:
+                  type: number
+                sypPrice:
+                  type: number
+                carTypeId:
+                  type: integer
+                governorate:
+                  type: string
+                address:
+                  type: string
+                lat:
+                  type: number
+                long:
+                  type: number
+                isFeatured:
+                  type: boolean
+                isVerified:
+                  type: boolean
+                status:
+                  type: string
+                  enum: [active, sold, hidden]
+                attributes:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CarAttributeInput'
+      responses:
+        '200':
+          description: Car updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CarDetails'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Cars]
+      summary: Delete a car and its attributes
+      parameters:
+        - $ref: '#/components/parameters/acceptLanguage'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Car deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  schemas:
+    Car:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        images:
+          type: array
+          items:
+            type: string
+        usdPrice:
+          type: number
+        sypPrice:
+          type: number
+        governorate:
+          type: string
+        address:
+          type: string
+        lat:
+          type: number
+        long:
+          type: number
+        isFeatured:
+          type: boolean
+        isVerified:
+          type: boolean
+        status:
+          type: string
+          enum: [active, sold, hidden]
+        viewsCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CarDetails:
+      allOf:
+        - $ref: '#/components/schemas/Car'
+        - type: object
+          properties:
+            user:
+              $ref: '#/components/schemas/User'
+            carType:
+              $ref: '#/components/schemas/CarType'
+            governorateInfo:
+              $ref: '#/components/schemas/Governorate'
+            attributes:
+              type: array
+              items:
+                $ref: '#/components/schemas/CarAttribute'
+
+    CarAttribute:
+      type: object
+      properties:
+        id:
+          type: integer
+        attribute:
+          $ref: '#/components/schemas/Attribute'
+        attributeOption:
+          $ref: '#/components/schemas/AttributeOption'
+        customValue:
+          type: string
+
+    CarAttributeInput:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Attribute ID
+        option_id:
+          type: integer
+          nullable: true
+          description: Option ID if attribute has options
+        value:
+          type: string
+          description: Custom value if no option selected
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+
+    CarType:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+
+    Governorate:
+      type: object
+      properties:
+        name:
+          type: string
+
+    Attribute:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        input_type:
+          type: string
+
+    AttributeOption:
+      type: object
+      properties:
+        id:
+          type: integer
+        value:
+          type: string
+
+    PaginationMeta:
+      type: object
+      properties:
+        currentPage:
+          type: integer
+        itemCount:
+          type: integer
+        itemsPerPage:
+          type: integer
+        totalItems:
+          type: integer
+        totalPages:
+          type: integer
+
+  parameters:
+    acceptLanguage:
+      name: accept-language
+      in: header
+      description: Language preference (ar/en)
+      schema:
+        type: string
+        enum: [ar, en]
+        default: ar
+
+  responses:
+    NotFound:
+      description: The requested resource was not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string

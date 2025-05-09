@@ -1,13 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
-import { Attribute } from './attribute';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn, ManyToMany, JoinTable } from 'typeorm';
+import { Attribute } from './Attributes';
 import { CarAttribute } from './car-attribute';
+
 @Entity('attribute_options')
 export class AttributeOption {
   @PrimaryGeneratedColumn()
   id: number;
-
-  @Column({ name: 'attribute_id' })
-  attributeId: number;
 
   @Column()
   value: string;
@@ -15,11 +13,30 @@ export class AttributeOption {
   @Column({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 
-  // Relations
   @ManyToOne(() => Attribute, attribute => attribute.options)
   @JoinColumn({ name: 'attribute_id' })
   attribute: Attribute;
 
   @OneToMany(() => CarAttribute, carAttribute => carAttribute.attributeOption)
   carAttributes: CarAttribute[];
+
+  @OneToMany(() => Attribute, attribute => attribute.parentOption)
+  childAttributes: Attribute[];
+
+  // @ManyToMany(() => Attribute)
+  // @JoinTable({
+  //   name: 'option_related_attributes',
+  //   joinColumn: { name: 'option_id', referencedColumnName: 'id' },
+  //   inverseJoinColumn: { name: 'attribute_id', referencedColumnName: 'id' }
+  // })
+  // relatedAttributes: Attribute[];
+
+  // @ManyToMany(() => AttributeOption)
+  // @JoinTable({
+  //   name: 'option_related_options',
+  //   joinColumn: { name: 'option_id', referencedColumnName: 'id' },
+  //   inverseJoinColumn: { name: 'related_option_id', referencedColumnName: 'id' }
+  // })
+  // relatedOptions: AttributeOption[];
+
 }

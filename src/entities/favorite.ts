@@ -17,7 +17,6 @@ export class Favorite {
   @Column({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 
-  // Relations
   @ManyToOne(() => User, user => user.favorites)
   @JoinColumn({ name: 'user_id' })
   user: User;

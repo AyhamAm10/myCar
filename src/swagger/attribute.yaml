@@ -1,0 +1,292 @@
+openapi: 3.0.0
+info:
+  title: Attributes Management API
+  description: API for managing attributes and their relationships
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000/api
+    description: Development server
+tags:
+  - name: Attributes
+    description: Operations related to attributes management
+
+paths:
+  /attributes:
+    get:
+      tags: [Attributes]
+      summary: Get all parent attributes
+      parameters:
+        - $ref: '#/components/parameters/acceptLanguage'
+        - name: purpose
+          in: query
+          schema:
+            type: string
+            enum: [sale, rent, both]
+        - name: showInSearch
+          in: query
+          schema:
+            type: boolean
+        - name: carTypeId
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of attributes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Attribute'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags: [Attributes]
+      summary: Create a new attribute
+      consumes:
+        - multipart/form-data
+      parameters:
+        - $ref: '#/components/parameters/acceptLanguage'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                input_type:
+                  type: string
+                  enum: [text, dropdown, nested_dropdown]
+                parentId:
+                  type: integer
+                options:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      value:
+                        type: string
+                show_in_search:
+                  type: boolean
+                purpose:
+                  type: string
+                  enum: [sale, rent, both]
+                parent_option_id:
+                  type: integer
+                car_type_id:
+                  type: integer
+                icon:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Attribute created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attribute'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /attributes/{id}:
+    get:
+      tags: [Attributes]
+      summary: Get attribute by ID
+      parameters:
+        - $ref: '#/components/parameters/acceptLanguage'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Attribute details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attribute'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Attributes]
+      summary: Update an attribute
+      consumes:
+        - multipart/form-data
+      parameters:
+        - $ref: '#/components/parameters/acceptLanguage'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                input_type:
+                  type: string
+                  enum: [text, dropdown, nested_dropdown]
+                parentId:
+                  type: integer
+                options:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      value:
+                        type: string
+                car_type_id:
+                  type: integer
+                icon:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Attribute updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attribute'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Attributes]
+      summary: Delete an attribute
+      parameters:
+        - $ref: '#/components/parameters/acceptLanguage'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Attribute deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /attributes/{parentId}/children:
+    get:
+      tags: [Attributes]
+      summary: Get child attributes
+      parameters:
+        - $ref: '#/components/parameters/acceptLanguage'
+        - name: parentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                optionParentId:
+                  type: integer
+      responses:
+        '200':
+          description: List of child attributes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Attribute'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  schemas:
+    Attribute:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        input_type:
+          type: string
+        showInSearch:
+          type: boolean
+        purpose:
+          type: string
+        icon:
+          type: string
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttributeOption'
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attribute'
+        parent:
+          $ref: '#/components/schemas/Attribute'
+        carType:
+          $ref: '#/components/schemas/CarType'
+
+    AttributeOption:
+      type: object
+      properties:
+        id:
+          type: integer
+        value:
+          type: string
+        attribute:
+          $ref: '#/components/schemas/Attribute'
+
+    CarType:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+
+  parameters:
+    acceptLanguage:
+      name: accept-language
+      in: header
+      description: Language preference (ar/en)
+      schema:
+        type: string
+        enum: [ar, en]
+        default: ar
+
+  responses:
+    NotFound:
+      description: The requested resource was not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string

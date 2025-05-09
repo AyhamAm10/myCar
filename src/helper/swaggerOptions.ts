@@ -33,6 +33,10 @@ const options: swaggerJsdoc.Options = {
   apis: [
     "./src/swagger/auth.yaml",
     "./src/swagger/profile.yaml",
+    "./src/swagger/attribute.yaml",
+    "./src/swagger/governorate.yaml",
+    "./src/swagger/car-types.yaml",
+    "./src/swagger/car.yaml",
   ],
 };
 

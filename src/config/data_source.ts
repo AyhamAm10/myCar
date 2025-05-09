@@ -2,11 +2,10 @@ import * as dotenv from "dotenv";
 import * as fs from "fs";
 import "reflect-metadata";
 import { DataSource } from "typeorm";
-import { Attribute } from "../entities/attribute";
+import { Attribute } from "../entities/Attributes";
 import { AttributeOption } from "../entities/attribute-option";
 import { Car } from "../entities/car";
 import { CarAttribute } from "../entities/car-attribute";
-import { CarModel } from "../entities/car-modal";
 import { CarType } from "../entities/car-type";
 import { Favorite } from "../entities/favorite";
 import { Governorate } from "../entities/governorate";
@@ -36,7 +35,6 @@ export const AppDataSource = new DataSource({
     AttributeOption,
     Car,
     CarAttribute,
-    CarModel,
     CarType,
     Favorite,
     Governorate,

@@ -11,6 +11,9 @@ import { authRouter } from "./router/auth.route";
 import { createSuperAdmin } from "./config/create-super-admin";
 import { swaggerDoc } from "./helper/swaggerOptions";
 import { profileRouter } from "./router/profile.route";
+import attributeRouter from "./router/attribute.route";
+import governorateRouter from "./router/governorate.route";
+import carTypeRouter from "./router/carType.route";
 
 dotenv.config();
 const app = express();
@@ -36,6 +39,9 @@ router.get("/", (req, res) => {
 
 router.use("/auth", authRouter);
 router.use("/profile", profileRouter);
+router.use("/attributes", attributeRouter);
+router.use("/governorates", governorateRouter);
+router.use("/car-types", carTypeRouter);
 
 app.use(process.env.BASE_URL ?? "/", router);
 

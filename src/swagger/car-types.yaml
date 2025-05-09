@@ -1,0 +1,183 @@
+openapi: 3.0.0
+info:
+  title: Car Types Management API
+  description: API for managing car types
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000/api
+    description: Development server
+tags:
+  - name: CarTypes
+    description: Operations related to car types management
+
+paths:
+  /car-types:
+    get:
+      tags: [CarTypes]
+      summary: Get all car types
+      parameters:
+        - $ref: '#/components/parameters/acceptLanguage'
+      responses:
+        '200':
+          description: List of car types
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CarType'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags: [CarTypes]
+      summary: Create a new car type
+      parameters:
+        - $ref: '#/components/parameters/acceptLanguage'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        '201':
+          description: Car type created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CarType'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Conflict (Car type already exists)
+
+  /car-types/{id}:
+    get:
+      tags: [CarTypes]
+      summary: Get car type by ID
+      parameters:
+        - $ref: '#/components/parameters/acceptLanguage'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Car type details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CarType'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [CarTypes]
+      summary: Update a car type
+      parameters:
+        - $ref: '#/components/parameters/acceptLanguage'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        '200':
+          description: Car type updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CarType'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Conflict (Name already exists)
+
+    delete:
+      tags: [CarTypes]
+      summary: Delete a car type
+      parameters:
+        - $ref: '#/components/parameters/acceptLanguage'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Car type deleted successfully
+        '400':
+          description: Bad Request (Cannot delete car type with associated cars)
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  schemas:
+    CarType:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        cars:
+          type: array
+          items:
+            $ref: '#/components/schemas/Car'
+
+    Car:
+      type: object
+      properties:
+        id:
+          type: integer
+        plateNumber:
+          type: string
+
+  parameters:
+    acceptLanguage:
+      name: accept-language
+      in: header
+      description: Language preference (ar/en)
+      schema:
+        type: string
+        enum: [ar, en]
+        default: ar
+
+  responses:
+    NotFound:
+      description: The requested resource was not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
