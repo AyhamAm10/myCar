@@ -180,6 +180,7 @@ export const createAttribute = async (
       purpose,
       parent_option_id,
       car_type_id,
+      hasChild
     } = req.body;
     const lang = req.headers["accept-language"] || "ar";
     const entityName = lang === "ar" ? "الخاصية" : "attribute";
@@ -244,6 +245,7 @@ export const createAttribute = async (
       parent,
       parentOption,
       carType,
+      hasChild
     });
 
     await attributeRepository.save(newAttribute);
