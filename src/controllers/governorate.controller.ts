@@ -17,10 +17,7 @@ export const getAllGovernorates = async (
     const lang = req.headers["accept-language"] || "ar";
     const entity = lang === "ar" ? "المحافظات" : "governorates";
 
-    const governorates = await governorateRepository.find({
-      relations: ["cars"],
-      order: { name: "ASC" }
-    });
+    const governorates = await governorateRepository.find();
 
     if (!governorates.length) {
       throw new APIError(
