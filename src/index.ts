@@ -42,6 +42,7 @@ router.use("/profile", profileRouter);
 router.use("/attributes", attributeRouter);
 router.use("/governorates", governorateRouter);
 router.use("/car-types", carTypeRouter);
+router.use("/car", carTypeRouter);
 
 app.use(process.env.BASE_URL ?? "/", router);
 
