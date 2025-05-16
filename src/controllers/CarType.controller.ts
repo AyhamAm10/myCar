@@ -127,6 +127,8 @@ export const updateCarType = async (
     const { name } = req.body;
     const lang = req.headers["accept-language"] || "ar";
     const entityName = lang === "ar" ? "نوع السيارة" : "car type";
+    
+
 
     if (!name) {
       throw new APIError(
@@ -143,7 +145,6 @@ export const updateCarType = async (
       );
     }
 
-    // Check if new name already exists
     const existingCarType = await carTypeRepository.findOneBy({ name });
     if (existingCarType && existingCarType.id !== Number(id)) {
       throw new APIError(

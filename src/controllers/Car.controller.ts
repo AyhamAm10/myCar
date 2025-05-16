@@ -138,10 +138,8 @@ export const createCar = async (
 ) => {
   try {
     const {
-      userId,
       title,
       description,
-      images,
       usdPrice,
       sypPrice,
       carTypeId,
@@ -151,12 +149,12 @@ export const createCar = async (
       long,
       attributes
     } = req.body;
-    
+    const userId = req.user?.id
     const lang = req.headers["accept-language"] || "ar";
     const entityName = lang === "ar" ? "السيارة" : "car";
 
     const requiredFields = [
-      'userId', 'title', 'description', 
+       'title', 'description', 
       'usdPrice', 'carTypeId', 'governorate', 
       'address', 'lat', 'long'
     ];
@@ -277,16 +275,21 @@ export const updateCar = async (
         isFeatured, 
         isVerified, 
         status,
-        attributes // السمات الجديدة
+        attributes 
       } = req.body;
       
       const lang = req.headers["accept-language"] || "ar";
       const entityName = lang === "ar" ? "السيارة" : "car";
-  
+      const user = req.user
+
       const car = await carRepository.findOne({
         where: { id: Number(id) },
         relations: ["attributes", "carType", "governorateInfo"]
       });
+
+      if(car.user !== user){
+        throw new APIError(HttpStatusCode.FORBIDDEN , ErrorMessages.generateErrorMessage("forbidden" , "user"))
+      }
   
       if (!car) {
         throw new APIError(
@@ -295,7 +298,6 @@ export const updateCar = async (
         );
       }
   
-      // تحديث الحقول الأساسية
       if (title) car.title = title;
       if (description) car.description = description;
       if (usdPrice) car.usdPrice = Number(usdPrice);
@@ -307,14 +309,12 @@ export const updateCar = async (
       if (isVerified !== undefined) car.isVerified = isVerified;
       if (status) car.status = status;
   
-      // تحديث الصور إذا وجدت
       if (req.files) {
         car.images = (req.files as Express.Multer.File[]).map(
           (file) => `/src/public/uploads/${file.filename}`
         );
       }
   
-      // تحديث نوع السيارة إذا وجد
       if (carTypeId) {
         const carType = await carTypeRepository.findOneBy({ id: carTypeId });
         if (!carType) {
@@ -326,7 +326,6 @@ export const updateCar = async (
         car.carType = carType;
       }
   
-      // تحديث المحافظة إذا وجدت
       if (governorate) {
         const gov = await governorateRepository.findOneBy({ name: governorate });
         if (!gov) {
@@ -337,13 +336,11 @@ export const updateCar = async (
         }
         car.governorateInfo = gov;
       }
-  
-      // معالجة تحديث السمات إذا وجدت
+
       if (attributes && Array.isArray(attributes)) {
-        // 1. حذف السمات القديمة
+
         await attributeValueRepository.delete({ car: { id: car.id } });
-  
-        // 2. إضافة السمات الجديدة
+
         const attributePromises = attributes.map(async (attr) => {
           const attribute = await attributeRepository.findOneBy({ id: attr.id });
           if (!attribute) {
@@ -392,17 +389,26 @@ export const deleteCar = async (
     const { id } = req.params;
     const lang = req.headers["accept-language"] || "ar";
     const entity = lang === "ar" ? "السيارة" : "car";
+    const user = req.user
+
+    
 
     const car = await carRepository.findOne({
       where: { id: Number(id) },
       relations: ["favorites", "promotionRequests", "attributes"]
     });
 
+    
+
     if (!car) {
       throw new APIError(
         HttpStatusCode.NOT_FOUND,
         ErrorMessages.generateErrorMessage(entity, "not found", lang)
       );
+    }
+
+    if(car.user !== user){
+      throw new APIError(HttpStatusCode.FORBIDDEN , ErrorMessages.generateErrorMessage("forbidden" , "user"))
     }
 
     await carRepository.remove(car);

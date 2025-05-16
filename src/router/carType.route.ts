@@ -11,7 +11,7 @@ const carTypeRouter: Router = Router();
 
 carTypeRouter.post("/",
     authMiddleware,
-    checkRole([UserRole.admin, UserRole.superAdmin]),
+    checkRole([UserRole.admin, UserRole.superAdmin , UserRole.user]),
     createCarType
 );
 
@@ -26,13 +26,13 @@ carTypeRouter.get("/:id",
 
 carTypeRouter.put("/:id",
     authMiddleware,
-    checkRole([UserRole.admin, UserRole.superAdmin]),
+    checkRole([UserRole.admin, UserRole.superAdmin , UserRole.user]),
     updateCarType
 );
 
 carTypeRouter.delete("/:id",
     authMiddleware,
-    checkRole([UserRole.admin, UserRole.superAdmin]),
+    checkRole([UserRole.admin, UserRole.superAdmin , UserRole.user]),
     deleteCarType
 );
 
