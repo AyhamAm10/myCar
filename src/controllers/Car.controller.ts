@@ -11,6 +11,7 @@ import { Governorate } from "../entities/governorate";
 import { Attribute } from "../entities/Attributes";
 import { CarAttribute } from "../entities/car-attribute";
 import { AttributeOption } from "../entities/attribute-option";
+import { PromotionRequest } from "../entities/promotion-request";
 
 const carRepository = AppDataSource.getRepository(Car);
 const userRepository = AppDataSource.getRepository(User);
@@ -19,6 +20,7 @@ const governorateRepository = AppDataSource.getRepository(Governorate);
 const attributeRepository = AppDataSource.getRepository(Attribute)
 const attributeValueRepository = AppDataSource.getRepository(CarAttribute)
 const optionRepository = AppDataSource.getRepository(AttributeOption)
+const promationRepository = AppDataSource.getRepository(PromotionRequest)
 
 export const getAllCars = async (
   req: Request,
@@ -147,7 +149,8 @@ export const createCar = async (
       address,
       lat,
       long,
-      attributes
+      attributes,
+      promotion_request
     } = req.body;
     const userId = req.user?.id
     const lang = req.headers["accept-language"] || "ar";
@@ -217,6 +220,7 @@ export const createCar = async (
 
     const savedCar = await carRepository.save(newCar);
 
+
     let attributeList = [];
     if (attributes && attributes.length > 0) {
       const attributePromises = attributes.map(async (attr) => {
@@ -244,6 +248,14 @@ export const createCar = async (
       attributeList = await attributeValueRepository.save(await Promise.all(attributePromises));
     }
     
+    if(promotion_request){
+      const data =promationRepository.create({
+        car:savedCar,
+        user,
+      })
+
+      await promationRepository.save(data)
+    }
 
     res.status(HttpStatusCode.CREATED).json(
       ApiResponse.success(
