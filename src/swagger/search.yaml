@@ -1,0 +1,132 @@
+openapi: 3.0.3
+info:
+  title: Car Search API
+  version: 1.0.0
+  description: API للبحث عن السيارات باستخدام attribute_id و option_id
+
+tags:
+  - name: Cars
+    description: عمليات البحث المتعلقة بالسيارات
+
+paths:
+  /api/car/search:
+    post:
+      tags:
+        - Cars
+      summary: البحث عن السيارات
+      description: يرجع قائمة بالسيارات التي تحتوي على attributes معينة حسب attribute_id و option_id.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                attributes:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      attribute_id:
+                        type: integer
+                        example: 5
+                      value:
+                        type: integer
+                        description: option_id المرتبط بالـ attribute
+                        example: 12
+                page:
+                  type: integer
+                  example: 1
+                limit:
+                  type: integer
+                  example: 20
+      responses:
+        '200':
+          description: قائمة السيارات المطابقة
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: تم جلب السيارة بنجاح
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Car'
+                  pagination:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                        example: 100
+                      page:
+                        type: integer
+                        example: 1
+                      limit:
+                        type: integer
+                        example: 20
+                      totalPages:
+                        type: integer
+                        example: 5
+        '400':
+          description: خطأ في البيانات المدخلة
+        '500':
+          description: خطأ داخلي في الخادم
+
+components:
+  schemas:
+    Car:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: تويوتا كورولا
+        attributes:
+          type: array
+          items:
+            type: object
+            properties:
+              attribute:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    example: 5
+                  name:
+                    type: string
+                    example: اللون
+              attributeOption:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    example: 12
+                  value:
+                    type: string
+                    example: أسود
+        carType:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 2
+            name:
+              type: string
+              example: سيدان
+        governorateInfo:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 4
+            name:
+              type: string
+              example: دمشق
