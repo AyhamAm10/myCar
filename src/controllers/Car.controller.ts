@@ -159,6 +159,7 @@ export const createCar = async (
       'address', 'lat', 'long'
     ];
     
+    console.log(req.body)
     const missingFields = requiredFields.filter(field => !req.body[field]);
     
     if (missingFields.length > 0) {
