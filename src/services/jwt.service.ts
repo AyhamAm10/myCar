@@ -17,7 +17,7 @@ export class JwtService {
     const accessToken = jwt.sign(
       payload,
       this.accessTokenSecret,
-      { expiresIn: '15m' }
+      { expiresIn: '7d' }
     );
 
     const refreshToken = jwt.sign(
