@@ -15,6 +15,7 @@ import attributeRouter from "./router/attribute.route";
 import governorateRouter from "./router/governorate.route";
 import carTypeRouter from "./router/carType.route";
 import carRoute from "./router/car.route";
+import favoriteRoute from "./router/favorite.route";
 
 dotenv.config();
 const app = express();
@@ -44,6 +45,7 @@ router.use("/attributes", attributeRouter);
 router.use("/governorates", governorateRouter);
 router.use("/car-types", carTypeRouter);
 router.use("/car", carRoute);
+router.use("/favorites", favoriteRoute);
 
 app.use(process.env.BASE_URL ?? "/", router);
 

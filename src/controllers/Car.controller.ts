@@ -334,7 +334,7 @@ export const updateCar = async (
       });
 
       if(car.user !== user){
-        throw new APIError(HttpStatusCode.FORBIDDEN , ErrorMessages.generateErrorMessage("forbidden" , "user"))
+        throw new APIError(HttpStatusCode.FORBIDDEN , ErrorMessages.generateErrorMessage( "user" ,"forbidden" ))
       }
   
       if (!car) {
@@ -454,7 +454,7 @@ export const deleteCar = async (
     }
 
     if(car.user !== user){
-      throw new APIError(HttpStatusCode.FORBIDDEN , ErrorMessages.generateErrorMessage("forbidden" , "user"))
+      throw new APIError(HttpStatusCode.FORBIDDEN , ErrorMessages.generateErrorMessage( entity , "forbidden" ))
     }
 
     await carRepository.remove(car);

@@ -38,6 +38,7 @@ const options: swaggerJsdoc.Options = {
     "./src/swagger/car-types.yaml",
     "./src/swagger/car.yaml",
     "./src/swagger/search.yaml",
+    "./src/swagger/favorite.yaml",
   ],
 };
 
