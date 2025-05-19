@@ -42,6 +42,10 @@ paths:
           in: query
           schema:
             type: boolean
+        - name: userId
+          in: query
+          schema:
+            type: number
         - name: page
           in: query
           schema:

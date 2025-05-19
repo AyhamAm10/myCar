@@ -12,6 +12,7 @@ import { Attribute } from "../entities/Attributes";
 import { CarAttribute } from "../entities/car-attribute";
 import { AttributeOption } from "../entities/attribute-option";
 import { PromotionRequest } from "../entities/promotion-request";
+import { Favorite } from "../entities/favorite";
 
 const carRepository = AppDataSource.getRepository(Car);
 const userRepository = AppDataSource.getRepository(User);
@@ -21,6 +22,7 @@ const attributeRepository = AppDataSource.getRepository(Attribute)
 const attributeValueRepository = AppDataSource.getRepository(CarAttribute)
 const optionRepository = AppDataSource.getRepository(AttributeOption)
 const promationRepository = AppDataSource.getRepository(PromotionRequest)
+const favoriteRepository = AppDataSource.getRepository(Favorite)
 
 export const getAllCars = async (
   req: Request,
@@ -30,7 +32,9 @@ export const getAllCars = async (
   try {
     const lang = req.headers["accept-language"] || "ar";
     const entity = lang === "ar" ? "السيارات" : "cars";
-    const { status, carType, governorate, minPrice, maxPrice, isFeatured } = req.query;
+    const { status, carType, governorate, minPrice, maxPrice, isFeatured, userId } = req.query;
+
+    const currentUserId = req.user?.id; 
 
     let query = carRepository.createQueryBuilder("car")
       .leftJoinAndSelect("car.user", "user")
@@ -43,9 +47,7 @@ export const getAllCars = async (
     }
 
     if (carType) {
-      query = query.andWhere("car.carTypeId = :carType", { 
-        carType: Number(carType) 
-      });
+      query = query.andWhere("car.carTypeId = :carType", { carType: Number(carType) });
     }
 
     if (governorate) {
@@ -53,21 +55,19 @@ export const getAllCars = async (
     }
 
     if (minPrice) {
-      query = query.andWhere("car.USD_price >= :minPrice", { 
-        minPrice: Number(minPrice) 
-      });
+      query = query.andWhere("car.USD_price >= :minPrice", { minPrice: Number(minPrice) });
     }
 
     if (maxPrice) {
-      query = query.andWhere("car.USD_price <= :maxPrice", { 
-        maxPrice: Number(maxPrice) 
-      });
+      query = query.andWhere("car.USD_price <= :maxPrice", { maxPrice: Number(maxPrice) });
     }
 
     if (isFeatured) {
-      query = query.andWhere("car.isFeatured = :isFeatured", { 
-        isFeatured: isFeatured === 'true' 
-      });
+      query = query.andWhere("car.isFeatured = :isFeatured", { isFeatured: isFeatured === 'true' });
+    }
+
+    if (userId) {
+      query = query.andWhere("car.userId = :userId", { userId: Number(userId) });
     }
 
     const cars = await query.getMany();
@@ -79,9 +79,25 @@ export const getAllCars = async (
       );
     }
 
+    let favoriteCarIds: number[] = [];
+
+    if (currentUserId) {
+      const favorites = await favoriteRepository.find({
+        where: { userId: currentUserId },
+        select: ['carId']
+      });
+
+      favoriteCarIds = favorites.map(fav => fav.carId);
+    }
+
+    const updatedCars = cars.map(car => ({
+      ...car,
+      isFavorite: currentUserId ? favoriteCarIds.includes(car.id) : false
+    }));
+
     res.status(HttpStatusCode.OK).json(
       ApiResponse.success(
-        cars,
+        updatedCars,
         ErrorMessages.generateErrorMessage(entity, "retrieved", lang)
       )
     );
@@ -97,6 +113,7 @@ export const getCarById = async (
 ) => {
   try {
     const { id } = req.params;
+    const userId = req.query.userId ? Number(req.query.userId) : null;
     const lang = req.headers["accept-language"] || "ar";
     const entity = lang === "ar" ? "السيارة" : "car";
 
@@ -122,9 +139,25 @@ export const getCarById = async (
     car.viewsCount += 1;
     await carRepository.save(car);
 
+    let isFavorite = false;
+    if (userId) {
+      const favorite = await favoriteRepository.findOne({
+        where: {
+          userId,
+          carId: car.id,
+        },
+      });
+      isFavorite = !!favorite;
+    }
+
+    const result = {
+      ...car,
+      isFavorite,
+    };
+
     res.status(HttpStatusCode.OK).json(
       ApiResponse.success(
-        car,
+        result,
         ErrorMessages.generateErrorMessage(entity, "retrieved", lang)
       )
     );
