@@ -1,0 +1,86 @@
+tags:
+  - name: PromotionRequest
+    description: Promotion and verification request operations
+
+paths:
+  /gold/account-verification:
+    post:
+      tags:
+        - PromotionRequest
+      summary: Create account verification request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: {}
+      responses:
+        '201':
+          description: Account verification request created
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+
+  /gold/listing-promotion:
+    post:
+      tags:
+        - PromotionRequest
+      summary: Create listing promotion request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - carId
+              properties:
+                carId:
+                  type: number
+      responses:
+        '201':
+          description: Listing promotion request created
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+
+  /gold/promotion-request:
+    get:
+      tags:
+        - PromotionRequest
+      summary: Get all promotion requests
+      responses:
+        '200':
+          description: List of all requests
+        '401':
+          description: Unauthorized
+
+  /gold/{id}/status:
+    patch:
+      tags:
+        - PromotionRequest
+      summary: Update request status (approve/reject)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum: [approved, rejected]
+      responses:
+        '200':
+          description:
