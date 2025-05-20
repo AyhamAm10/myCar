@@ -24,106 +24,6 @@ const optionRepository = AppDataSource.getRepository(AttributeOption)
 const promationRepository = AppDataSource.getRepository(PromotionRequest)
 const favoriteRepository = AppDataSource.getRepository(Favorite)
 
-// export const getAllCars = async (
-//   req: Request,
-//   res: Response,
-//   next: NextFunction
-// ) => {
-//   try {
-//     const lang = req.headers["accept-language"] || "ar";
-//     const entity = lang === "ar" ? "السيارات" : "cars";
-//     const { status, carType, governorate, minPrice, maxPrice, isFeatured, userId } = req.query;
-
-//     const currentUserId = req.user?.id; 
-
-//     let query = carRepository.createQueryBuilder("car")
-//       .leftJoinAndSelect("car.user", "user")
-//       .leftJoinAndSelect("car.carType", "carType")
-//       .leftJoinAndSelect("car.governorateInfo", "governorate")
-//       .leftJoinAndSelect("car.attributes", "carAttributes") // تغيير الاسم هنا
-//       .leftJoinAndSelect("carAttributes.attribute", "attribute") // تصحيح العلاقة هنا
-//       .leftJoinAndSelect("carAttributes.attributeOption", "attributeOption") // تصحيح العلاقة هنا
-
-//     if (status) {
-//       query = query.andWhere("car.status = :status", { status });
-//     }
-
-//     if (carType) {
-//       query = query.andWhere("car.carTypeId = :carType", { carType: Number(carType) });
-//     }
-
-//     if (governorate) {
-//       query = query.andWhere("car.governorate = :governorate", { governorate });
-//     }
-
-//     if (minPrice) {
-//       query = query.andWhere("car.USD_price >= :minPrice", { minPrice: Number(minPrice) });
-//     }
-
-//     if (maxPrice) {
-//       query = query.andWhere("car.USD_price <= :maxPrice", { maxPrice: Number(maxPrice) });
-//     }
-
-//     if (isFeatured) {
-//       query = query.andWhere("car.isFeatured = :isFeatured", { isFeatured: isFeatured === 'true' });
-//     }
-
-//     if (userId) {
-//       query = query.andWhere("car.userId = :userId", { userId: Number(userId) });
-//     }
-
-//     const cars = await query.getMany();
-
-//     const formattedCarsData = cars.map((car) => {
-//       let attributes = [];
-//       if (car.attributes && car.attributes.length > 0) {
-//         attributes = car.attributes.map((att) => ({
-//           id: att.attribute?.id,
-//           title: att.attribute?.title,
-//           value: att.attributeOption ? att.attributeOption.value : att.customValue,
-//           optionId: att.attributeOption?.id
-//         }));
-//       }
-
-//       return {
-//         ...car,
-//         attributes
-//       };
-//     });
-
-//     if (!formattedCarsData.length) {
-//       throw new APIError(
-//         HttpStatusCode.NOT_FOUND,
-//         ErrorMessages.generateErrorMessage(entity, "not found", lang)
-//       );
-//     }
-
-//     let favoriteCarIds: number[] = [];
-
-//     if (currentUserId) {
-//       const favorites = await favoriteRepository.find({
-//         where: { userId: currentUserId }
-//       });
-
-//       favoriteCarIds = favorites.map(fav => fav.carId);
-//     }
-
-//     const updatedCars = formattedCarsData.map(car => ({
-//       ...car,
-//       isFavorite: currentUserId ? favoriteCarIds.includes(car.id) : false
-//     }));
-
-//     res.status(HttpStatusCode.OK).json(
-//       ApiResponse.success(
-//         updatedCars,
-//         ErrorMessages.generateErrorMessage(entity, "retrieved", lang)
-//       )
-//     );
-//   } catch (error) {
-//     next(error);
-//   }
-// };
-
 export const getAllCars = async (
   req: Request,
   res: Response,
@@ -266,6 +166,8 @@ export const getCarById = async (
         "carType", 
         "governorateInfo", 
         "attributes",
+        "attributes.attribute",  // إضافة العلاقة مع جدول attribute
+        "attributes.attributeOption",  // إضافة العلاقة مع جدول attributeOption
         "favorites",
         "promotionRequests"
       ]
@@ -292,8 +194,18 @@ export const getCarById = async (
       isFavorite = !!favorite;
     }
 
+    // تنسيق بيانات السمات
+    const formattedAttributes = car.attributes?.map(attr => ({
+      id: attr.id,
+      attributeId: attr.attribute?.id,
+      title: attr.attribute?.title,
+      value: attr.attributeOption ? attr.attributeOption.value : attr.customValue,
+      optionId: attr.attributeOption?.id
+    })) || [];
+
     const result = {
       ...car,
+      attributes: formattedAttributes,
       isFavorite,
     };
 
