@@ -24,6 +24,106 @@ const optionRepository = AppDataSource.getRepository(AttributeOption)
 const promationRepository = AppDataSource.getRepository(PromotionRequest)
 const favoriteRepository = AppDataSource.getRepository(Favorite)
 
+// export const getAllCars = async (
+//   req: Request,
+//   res: Response,
+//   next: NextFunction
+// ) => {
+//   try {
+//     const lang = req.headers["accept-language"] || "ar";
+//     const entity = lang === "ar" ? "السيارات" : "cars";
+//     const { status, carType, governorate, minPrice, maxPrice, isFeatured, userId } = req.query;
+
+//     const currentUserId = req.user?.id; 
+
+//     let query = carRepository.createQueryBuilder("car")
+//       .leftJoinAndSelect("car.user", "user")
+//       .leftJoinAndSelect("car.carType", "carType")
+//       .leftJoinAndSelect("car.governorateInfo", "governorate")
+//       .leftJoinAndSelect("car.attributes", "carAttributes") // تغيير الاسم هنا
+//       .leftJoinAndSelect("carAttributes.attribute", "attribute") // تصحيح العلاقة هنا
+//       .leftJoinAndSelect("carAttributes.attributeOption", "attributeOption") // تصحيح العلاقة هنا
+
+//     if (status) {
+//       query = query.andWhere("car.status = :status", { status });
+//     }
+
+//     if (carType) {
+//       query = query.andWhere("car.carTypeId = :carType", { carType: Number(carType) });
+//     }
+
+//     if (governorate) {
+//       query = query.andWhere("car.governorate = :governorate", { governorate });
+//     }
+
+//     if (minPrice) {
+//       query = query.andWhere("car.USD_price >= :minPrice", { minPrice: Number(minPrice) });
+//     }
+
+//     if (maxPrice) {
+//       query = query.andWhere("car.USD_price <= :maxPrice", { maxPrice: Number(maxPrice) });
+//     }
+
+//     if (isFeatured) {
+//       query = query.andWhere("car.isFeatured = :isFeatured", { isFeatured: isFeatured === 'true' });
+//     }
+
+//     if (userId) {
+//       query = query.andWhere("car.userId = :userId", { userId: Number(userId) });
+//     }
+
+//     const cars = await query.getMany();
+
+//     const formattedCarsData = cars.map((car) => {
+//       let attributes = [];
+//       if (car.attributes && car.attributes.length > 0) {
+//         attributes = car.attributes.map((att) => ({
+//           id: att.attribute?.id,
+//           title: att.attribute?.title,
+//           value: att.attributeOption ? att.attributeOption.value : att.customValue,
+//           optionId: att.attributeOption?.id
+//         }));
+//       }
+
+//       return {
+//         ...car,
+//         attributes
+//       };
+//     });
+
+//     if (!formattedCarsData.length) {
+//       throw new APIError(
+//         HttpStatusCode.NOT_FOUND,
+//         ErrorMessages.generateErrorMessage(entity, "not found", lang)
+//       );
+//     }
+
+//     let favoriteCarIds: number[] = [];
+
+//     if (currentUserId) {
+//       const favorites = await favoriteRepository.find({
+//         where: { userId: currentUserId }
+//       });
+
+//       favoriteCarIds = favorites.map(fav => fav.carId);
+//     }
+
+//     const updatedCars = formattedCarsData.map(car => ({
+//       ...car,
+//       isFavorite: currentUserId ? favoriteCarIds.includes(car.id) : false
+//     }));
+
+//     res.status(HttpStatusCode.OK).json(
+//       ApiResponse.success(
+//         updatedCars,
+//         ErrorMessages.generateErrorMessage(entity, "retrieved", lang)
+//       )
+//     );
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
 export const getAllCars = async (
   req: Request,
   res: Response,
@@ -32,7 +132,17 @@ export const getAllCars = async (
   try {
     const lang = req.headers["accept-language"] || "ar";
     const entity = lang === "ar" ? "السيارات" : "cars";
-    const { status, carType, governorate, minPrice, maxPrice, isFeatured, userId } = req.query;
+    const { 
+      status, 
+      carType, 
+      governorate, 
+      minPrice, 
+      maxPrice, 
+      isFeatured, 
+      userId,
+      search, // إضافة معلمة البحث
+      sort = 'desc' // إضافة معلمة الترتيب (افتراضيًا من الأحدث)
+    } = req.query;
 
     const currentUserId = req.user?.id; 
 
@@ -40,7 +150,23 @@ export const getAllCars = async (
       .leftJoinAndSelect("car.user", "user")
       .leftJoinAndSelect("car.carType", "carType")
       .leftJoinAndSelect("car.governorateInfo", "governorate")
-      .leftJoinAndSelect("car.attributes", "attributes");
+      .leftJoinAndSelect("car.attributes", "carAttributes")
+      .leftJoinAndSelect("carAttributes.attribute", "attribute")
+      .leftJoinAndSelect("carAttributes.attributeOption", "attributeOption");
+
+    // إضافة البحث الجزئي حسب العنوان
+    if (search) {
+      query = query.andWhere("car.title LIKE :search", { 
+        search: `%${search}%` 
+      });
+    }
+
+    // إضافة الترتيب حسب التاريخ
+    if (sort === 'asc') {
+      query = query.orderBy("car.createdAt", "ASC"); // من الأقدم إلى الأحدث
+    } else {
+      query = query.orderBy("car.createdAt", "DESC"); // من الأحدث إلى الأقدم (افتراضي)
+    }
 
     if (status) {
       query = query.andWhere("car.status = :status", { status });
@@ -72,7 +198,24 @@ export const getAllCars = async (
 
     const cars = await query.getMany();
 
-    if (!cars.length) {
+    const formattedCarsData = cars.map((car) => {
+      let attributes = [];
+      if (car.attributes && car.attributes.length > 0) {
+        attributes = car.attributes.map((att) => ({
+          id: att.attribute?.id,
+          title: att.attribute?.title,
+          value: att.attributeOption ? att.attributeOption.value : att.customValue,
+          optionId: att.attributeOption?.id
+        }));
+      }
+
+      return {
+        ...car,
+        attributes
+      };
+    });
+
+    if (!formattedCarsData.length) {
       throw new APIError(
         HttpStatusCode.NOT_FOUND,
         ErrorMessages.generateErrorMessage(entity, "not found", lang)
@@ -83,14 +226,13 @@ export const getAllCars = async (
 
     if (currentUserId) {
       const favorites = await favoriteRepository.find({
-        where: { userId: currentUserId },
-        select: ['carId']
+        where: { userId: currentUserId }
       });
 
       favoriteCarIds = favorites.map(fav => fav.carId);
     }
 
-    const updatedCars = cars.map(car => ({
+    const updatedCars = formattedCarsData.map(car => ({
       ...car,
       isFavorite: currentUserId ? favoriteCarIds.includes(car.id) : false
     }));

@@ -17,14 +17,20 @@ carRoute.post("/",
 );
 
 carRoute.post("/search",
+    authMiddleware,
+    checkRole([UserRole.user , UserRole.admin, UserRole.superAdmin]),
     searchClass.search
 );
 
 carRoute.get("/",
+    authMiddleware,
+    checkRole([UserRole.user , UserRole.admin, UserRole.superAdmin]),
     getAllCars
 );
 
 carRoute.get("/:id",
+    authMiddleware,
+    checkRole([UserRole.user , UserRole.admin, UserRole.superAdmin]),
     getCarById
 );
 

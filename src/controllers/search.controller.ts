@@ -5,6 +5,7 @@ import { Car } from '../entities/car';
 import { CarAttribute } from '../entities/car-attribute';
 import { ApiResponse } from '../common/responses/api.response';
 import { ErrorMessages } from '../common/errors/ErrorMessages';
+import { Favorite } from '../entities/favorite';
 
 export class CarSearchController {
   async search(req: Request, res: Response, next: NextFunction) {
@@ -12,6 +13,7 @@ export class CarSearchController {
       const { attributes, page = 1, limit = 20 } = req.body;
       const lang = req.headers['accept-language'] || 'ar';
       const entity = lang === 'ar' ? 'السيارة' : 'car';
+      const currentUserId = req.user?.id;
 
       if (page < 1 || limit < 1) {
         throw new APIError(
@@ -22,32 +24,68 @@ export class CarSearchController {
 
       const carRepo = AppDataSource.getRepository(Car);
       const query = carRepo.createQueryBuilder('car')
-        .leftJoinAndSelect('car.attributes', 'car_attribute')
-        .leftJoinAndSelect('car_attribute.attribute', 'attribute')
-        .leftJoinAndSelect('car_attribute.attributeOption', 'attributeOption')
+        .leftJoinAndSelect('car.user', 'user')
+        .leftJoinAndSelect('car.attributes', 'carAttribute')
+        .leftJoinAndSelect('carAttribute.attribute', 'attribute')
+        .leftJoinAndSelect('carAttribute.attributeOption', 'attributeOption')
         .leftJoinAndSelect('car.carType', 'carType')
         .leftJoinAndSelect('car.governorateInfo', 'governorate');
 
+      // تطبيق فلتر السمات إذا وجد
       if (attributes && attributes.length > 0) {
-        for (let index = 0; index < attributes.length; index++) {
-          const attr = attributes[index];
+        // نستخدم innerJoin بدلاً من leftJoin للسمات المطلوبة
+        attributes.forEach((attr, index) => {
           const alias = `filter_attr_${index}`;
-
+          
           query.innerJoin(
-            CarAttribute,
+            'car.attributes', 
             alias,
-            `${alias}.car = car.id AND ${alias}.attribute = :attrId${index} AND ${alias}.attributeOption = :optionId${index}`,
+            `${alias}.attribute_id = :attrId${index} AND (${alias}.attribute_option_id = :optionId${index} OR ${alias}.custom_value = :customValue${index})`,
             {
               [`attrId${index}`]: attr.attribute_id,
               [`optionId${index}`]: attr.value,
+              [`customValue${index}`]: attr.value
             }
           );
-        }
+        });
       }
 
       query.skip((page - 1) * limit).take(limit);
 
       const [cars, total] = await query.getManyAndCount();
+
+      // إذا كان هناك فلتر سمات ولم نجد سيارات مطابقة
+      if (attributes?.length > 0 && cars.length === 0) {
+        throw new APIError(
+          HttpStatusCode.NOT_FOUND,
+          ErrorMessages.generateErrorMessage(entity, "not found", lang)
+        );
+      }
+
+      // الحصول على السيارات المفضلة إذا كان المستخدم مسجل الدخول
+      let favoriteCarIds: number[] = [];
+      if (currentUserId) {
+        const favorites = await AppDataSource.getRepository(Favorite).find({
+          where: { userId: currentUserId }
+        });
+        favoriteCarIds = favorites.map(fav => fav.carId);
+      }
+
+      // تنسيق بيانات السيارات بما في ذلك السمات
+      const formattedCars = cars.map(car => {
+        const carAttributes = car.attributes?.map(attr => ({
+          id: attr.attribute?.id,
+          title: attr.attribute?.title,
+          value: attr.attributeOption ? attr.attributeOption.value : attr.customValue,
+          optionId: attr.attributeOption?.id
+        })) || [];
+
+        return {
+          ...car,
+          attributes: carAttributes,
+          isFavorite: currentUserId ? favoriteCarIds.includes(car.id) : false
+        };
+      });
 
       const pagination = {
         total,
@@ -58,7 +96,7 @@ export class CarSearchController {
 
       res.status(HttpStatusCode.OK).json(
         ApiResponse.success(
-          cars,
+          formattedCars,
           ErrorMessages.generateErrorMessage(entity, 'retrieved', lang),
           pagination
         )
@@ -66,5 +104,5 @@ export class CarSearchController {
     } catch (error) {
       next(error);
     }
-  }
+}
 }
