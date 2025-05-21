@@ -18,6 +18,7 @@ authRouter.post("/register", (req, res, next) => {
     authController.logout(req, res, next);
   });
 
-  authRouter.post("/me", (req, res, next) => {
+  authRouter.post("/me", authMiddleware, (req, res, next) => {
+    
     authController.getCurrentUser(req, res, next);
   });
