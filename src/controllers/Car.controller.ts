@@ -170,7 +170,7 @@ export const getCarById = async (
 ) => {
   try {
     const { id } = req.params;
-    const userId = req.query.userId ? Number(req.query.userId) : null;
+    const userId = req.user?.id 
     const lang = req.headers["accept-language"] || "ar";
     const entity = lang === "ar" ? "السيارة" : "car";
 
@@ -181,9 +181,8 @@ export const getCarById = async (
         "carType", 
         "governorateInfo", 
         "attributes",
-        "attributes.attribute",  // إضافة العلاقة مع جدول attribute
-        "attributes.attributeOption",  // إضافة العلاقة مع جدول attributeOption
-        "favorites",
+        "attributes.attribute",  
+        "attributes.attributeOption",  
         "promotionRequests"
       ]
     });
@@ -198,18 +197,7 @@ export const getCarById = async (
     car.viewsCount += 1;
     await carRepository.save(car);
 
-    let isFavorite = false;
-    if (userId) {
-      const favorite = await favoriteRepository.findOne({
-        where: {
-          userId,
-          carId: car.id,
-        },
-      });
-      isFavorite = !!favorite;
-    }
 
-    // تنسيق بيانات السمات
     const formattedAttributes = car.attributes?.map(attr => ({
       id: attr.id,
       attributeId: attr.attribute?.id,
@@ -218,12 +206,20 @@ export const getCarById = async (
       optionId: attr.attributeOption?.id
     })) || [];
 
+    let favoriteCarIds: number[] = [];
+
+    if (userId) {
+      const favorites = await favoriteRepository.find({
+        where: { userId: userId }
+      });
+      favoriteCarIds = favorites.map(fav => fav.carId);
+    }
+
     const result = {
       ...car,
       attributes: formattedAttributes,
-      isFavorite,
+      isFavorite: userId ? favoriteCarIds.includes(car.id) : false,
     };
-
     res.status(HttpStatusCode.OK).json(
       ApiResponse.success(
         result,
