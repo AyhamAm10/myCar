@@ -72,6 +72,64 @@ export const getAttributes = async (
   }
 };
 
+export const getAttributesForEditCar = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { purpose, showInSearch, carTypeId } = req.query;
+    const lang = req.headers["accept-language"] || "ar";
+    const entity = lang === "ar" ? "الخصائص" : "attributes";
+
+    let queryBuilder = attributeRepository
+      .createQueryBuilder("attribute")
+      .leftJoinAndSelect("attribute.options", "options")
+      .leftJoinAndSelect("attribute.children", "children")
+      .leftJoinAndSelect("attribute.carType", "carType");
+
+    if (purpose) {
+      queryBuilder = queryBuilder.andWhere(
+        "attribute.purpose = :purpose OR attribute.purpose = 'both'",
+        { purpose }
+      );
+    }
+
+    if (showInSearch !== undefined) {
+      queryBuilder = queryBuilder.andWhere(
+        "attribute.showInSearch = :showInSearch",
+        { showInSearch: showInSearch === "true" }
+      );
+    }
+
+    if (carTypeId) {
+      queryBuilder = queryBuilder.andWhere("carType.id = :carTypeId", {
+        carTypeId: Number(carTypeId),
+      });
+    }
+
+    const attributes = await queryBuilder.getMany();
+
+    if (!attributes.length) {
+      throw new APIError(
+        HttpStatusCode.NOT_FOUND,
+        ErrorMessages.generateErrorMessage(entity, "not found", lang)
+      );
+    }
+
+    res
+      .status(HttpStatusCode.OK)
+      .json(
+        ApiResponse.success(
+          attributes,
+          ErrorMessages.generateErrorMessage(entity, "retrieved", lang)
+        )
+      );
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getAttributeById = async (
   req: Request,
   res: Response,
