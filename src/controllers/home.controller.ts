@@ -3,11 +3,13 @@ import { Between } from "typeorm";
 import { AppDataSource } from "../config/data_source";
 import { Car } from "../entities/car";
 import { PromotionRequest } from "../entities/promotion-request";
+import { Favorite } from "../entities/favorite";
 
 export const getHighlightedCars = async (req: Request, res: Response) => {
   try {
     const carRepo = AppDataSource.getRepository(Car);
     const promoRepo = AppDataSource.getRepository(PromotionRequest);
+    const currentUserId = req.user?.id;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -35,15 +37,33 @@ export const getHighlightedCars = async (req: Request, res: Response) => {
       take: 20,
     });
 
-    // فلترة السيارات المرتبطة التي تكون فعالة ومحققة
     const goldenCars = goldenPromoRequests
       .map((req) => req.car)
       .filter((car): car is Car => !!car && car.status === "active")
       .slice(0, 10);
 
+      let favoriteCarIds: number[] = [];
+      if (currentUserId) {
+        const favorites = await AppDataSource.getRepository(Favorite).find({
+          where: { userId: currentUserId }
+        });
+  
+        favoriteCarIds = favorites.map(fav => fav.carId);
+      }
+
+      const updateGolden = goldenCars.map(car => ({
+        ...car,
+        isFavorite: currentUserId ? favoriteCarIds.includes(car.id) : false
+      }));
+
+      const updatetodayCars = todayCars.map(car => ({
+        ...car,
+        isFavorite: currentUserId ? favoriteCarIds.includes(car.id) : false
+      }));
+
     res.json({
-      golden: goldenCars,
-      today: todayCars,
+      golden: updateGolden,
+      today: updatetodayCars,
     });
   } catch (err) {
     console.error(err);
