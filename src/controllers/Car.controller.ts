@@ -18,11 +18,11 @@ const carRepository = AppDataSource.getRepository(Car);
 const userRepository = AppDataSource.getRepository(User);
 const carTypeRepository = AppDataSource.getRepository(CarType);
 const governorateRepository = AppDataSource.getRepository(Governorate);
-const attributeRepository = AppDataSource.getRepository(Attribute)
-const attributeValueRepository = AppDataSource.getRepository(CarAttribute)
-const optionRepository = AppDataSource.getRepository(AttributeOption)
-const promationRepository = AppDataSource.getRepository(PromotionRequest)
-const favoriteRepository = AppDataSource.getRepository(Favorite)
+const attributeRepository = AppDataSource.getRepository(Attribute);
+const attributeValueRepository = AppDataSource.getRepository(CarAttribute);
+const optionRepository = AppDataSource.getRepository(AttributeOption);
+const promationRepository = AppDataSource.getRepository(PromotionRequest);
+const favoriteRepository = AppDataSource.getRepository(Favorite);
 
 export const getAllCars = async (
   req: Request,
@@ -41,9 +41,9 @@ export const getAllCars = async (
       isFeatured,
       userId,
       search,
-      sort = 'desc',
-      page = '1',
-      limit = '10'
+      sort = "desc",
+      page = "1",
+      limit = "10",
     } = req.query;
 
     const pageNumber = parseInt(page as string, 10) || 1;
@@ -52,7 +52,8 @@ export const getAllCars = async (
 
     const currentUserId = req.user?.id;
 
-    let query = carRepository.createQueryBuilder("car")
+    let query = carRepository
+      .createQueryBuilder("car")
       .leftJoinAndSelect("car.user", "user")
       .leftJoinAndSelect("car.carType", "carType")
       .leftJoinAndSelect("car.governorateInfo", "governorate")
@@ -62,11 +63,11 @@ export const getAllCars = async (
 
     if (search) {
       query = query.andWhere("car.title LIKE :search", {
-        search: `%${search}%`
+        search: `%${search}%`,
       });
     }
 
-    if (sort === 'asc') {
+    if (sort === "asc") {
       query = query.orderBy("car.createdAt", "ASC");
     } else {
       query = query.orderBy("car.createdAt", "DESC");
@@ -77,7 +78,9 @@ export const getAllCars = async (
     }
 
     if (carType) {
-      query = query.andWhere("car.carTypeId = :carType", { carType: Number(carType) });
+      query = query.andWhere("car.carTypeId = :carType", {
+        carType: Number(carType),
+      });
     }
 
     if (governorate) {
@@ -85,19 +88,27 @@ export const getAllCars = async (
     }
 
     if (minPrice) {
-      query = query.andWhere("car.USD_price >= :minPrice", { minPrice: Number(minPrice) });
+      query = query.andWhere("car.USD_price >= :minPrice", {
+        minPrice: Number(minPrice),
+      });
     }
 
     if (maxPrice) {
-      query = query.andWhere("car.USD_price <= :maxPrice", { maxPrice: Number(maxPrice) });
+      query = query.andWhere("car.USD_price <= :maxPrice", {
+        maxPrice: Number(maxPrice),
+      });
     }
 
     if (isFeatured) {
-      query = query.andWhere("car.isFeatured = :isFeatured", { isFeatured: isFeatured === 'true' });
+      query = query.andWhere("car.isFeatured = :isFeatured", {
+        isFeatured: isFeatured === "true",
+      });
     }
 
     if (userId) {
-      query = query.andWhere("car.userId = :userId", { userId: Number(userId) });
+      query = query.andWhere("car.userId = :userId", {
+        userId: Number(userId),
+      });
     }
 
     query = query.skip(skip).take(pageSize);
@@ -110,14 +121,16 @@ export const getAllCars = async (
         attributes = car.attributes.map((att) => ({
           id: att.attribute?.id,
           title: att.attribute?.title,
-          value: att.attributeOption ? att.attributeOption.value : att.customValue,
-          optionId: att.attributeOption?.id
+          value: att.attributeOption
+            ? att.attributeOption.value
+            : att.customValue,
+          optionId: att.attributeOption?.id,
         }));
       }
 
       return {
         ...car,
-        attributes
+        attributes,
       };
     });
 
@@ -132,15 +145,15 @@ export const getAllCars = async (
 
     if (currentUserId) {
       const favorites = await favoriteRepository.find({
-        where: { userId: currentUserId }
+        where: { userId: currentUserId },
       });
 
-      favoriteCarIds = favorites.map(fav => fav.carId);
+      favoriteCarIds = favorites.map((fav) => fav.carId);
     }
 
-    const updatedCars = formattedCarsData.map(car => ({
+    const updatedCars = formattedCarsData.map((car) => ({
       ...car,
-      isFavorite: currentUserId ? favoriteCarIds.includes(car.id) : false
+      isFavorite: currentUserId ? favoriteCarIds.includes(car.id) : false,
     }));
 
     const pagination = {
@@ -150,18 +163,19 @@ export const getAllCars = async (
       totalPages: Math.ceil(totalCount / pageSize),
     };
 
-    res.status(HttpStatusCode.OK).json(
-      ApiResponse.success(
-        updatedCars,
-        ErrorMessages.generateErrorMessage(entity, "retrieved", lang),
-        pagination
-      )
-    );
+    res
+      .status(HttpStatusCode.OK)
+      .json(
+        ApiResponse.success(
+          updatedCars,
+          ErrorMessages.generateErrorMessage(entity, "retrieved", lang),
+          pagination
+        )
+      );
   } catch (error) {
     next(error);
   }
 };
-
 
 export const getCarById = async (
   req: Request,
@@ -170,21 +184,21 @@ export const getCarById = async (
 ) => {
   try {
     const { id } = req.params;
-    const userId = req.user?.id 
+    const userId = req.user?.id;
     const lang = req.headers["accept-language"] || "ar";
     const entity = lang === "ar" ? "السيارة" : "car";
 
     const car = await carRepository.findOne({
       where: { id: Number(id) },
       relations: [
-        "user", 
-        "carType", 
-        "governorateInfo", 
+        "user",
+        "carType",
+        "governorateInfo",
         "attributes",
-        "attributes.attribute",  
-        "attributes.attributeOption",  
-        "promotionRequests"
-      ]
+        "attributes.attribute",
+        "attributes.attributeOption",
+        "promotionRequests",
+      ],
     });
 
     if (!car) {
@@ -197,22 +211,24 @@ export const getCarById = async (
     car.viewsCount += 1;
     await carRepository.save(car);
 
-
-    const formattedAttributes = car.attributes?.map(attr => ({
-      id: attr.id,
-      attributeId: attr.attribute?.id,
-      title: attr.attribute?.title,
-      value: attr.attributeOption ? attr.attributeOption.value : attr.customValue,
-      optionId: attr.attributeOption?.id
-    })) || [];
+    const formattedAttributes =
+      car.attributes?.map((attr) => ({
+        id: attr.id,
+        attributeId: attr.attribute?.id,
+        title: attr.attribute?.title,
+        value: attr.attributeOption
+          ? attr.attributeOption.value
+          : attr.customValue,
+        optionId: attr.attributeOption?.id,
+      })) || [];
 
     let favoriteCarIds: number[] = [];
 
     if (userId) {
       const favorites = await favoriteRepository.find({
-        where: { userId: userId }
+        where: { userId: userId },
       });
-      favoriteCarIds = favorites.map(fav => fav.carId);
+      favoriteCarIds = favorites.map((fav) => fav.carId);
     }
 
     const result = {
@@ -220,12 +236,14 @@ export const getCarById = async (
       attributes: formattedAttributes,
       isFavorite: userId ? favoriteCarIds.includes(car.id) : false,
     };
-    res.status(HttpStatusCode.OK).json(
-      ApiResponse.success(
-        result,
-        ErrorMessages.generateErrorMessage(entity, "retrieved", lang)
-      )
-    );
+    res
+      .status(HttpStatusCode.OK)
+      .json(
+        ApiResponse.success(
+          result,
+          ErrorMessages.generateErrorMessage(entity, "retrieved", lang)
+        )
+      );
   } catch (error) {
     next(error);
   }
@@ -248,28 +266,32 @@ export const createCar = async (
       lat,
       long,
       attributes,
-      promotion_request
+      promotion_request,
     } = req.body;
-    const userId = req.user?.id
+    const userId = req.user?.id;
     const lang = req.headers["accept-language"] || "ar";
     const entityName = lang === "ar" ? "السيارة" : "car";
 
     const requiredFields = [
-       'title', 'description', 
-      'usdPrice', 'carTypeId', 'governorate', 
-      'address', 'lat', 'long'
+      "title",
+      "description",
+      "usdPrice",
+      "carTypeId",
+      "governorate",
+      "address",
+      "lat",
+      "long",
     ];
-    
-    console.log(req.body)
-    const missingFields = requiredFields.filter(field => !req.body[field]);
-    
+
+    console.log(req.body);
+    const missingFields = requiredFields.filter((field) => !req.body[field]);
+
     if (missingFields.length > 0) {
       throw new APIError(
         HttpStatusCode.BAD_REQUEST,
         ErrorMessages.generateErrorMessage(entityName, "missing fields", lang)
       );
     }
-
 
     const user = await userRepository.findOneBy({ id: userId });
     if (!user) {
@@ -299,11 +321,11 @@ export const createCar = async (
       userId,
       title,
       description,
-      images:req.files
-      ? (req.files as Express.Multer.File[]).map(
-          (file) => `/src/public/uploads/${file.filename}`
-        )
-      : [],
+      images: req.files
+        ? (req.files as Express.Multer.File[]).map(
+            (file) => `/src/public/uploads/${file.filename}`
+          )
+        : [],
       usdPrice: Number(usdPrice),
       sypPrice: sypPrice ? Number(sypPrice) : Number(usdPrice) * 15000, // افتراضي إذا لم يتم التزويد
       carTypeId,
@@ -313,11 +335,10 @@ export const createCar = async (
       long: Number(long),
       user,
       carType,
-      governorateInfo: gov
+      governorateInfo: gov,
     });
 
     const savedCar = await carRepository.save(newCar);
-
 
     let attributeList = [];
     if (attributes && attributes.length > 0) {
@@ -331,165 +352,172 @@ export const createCar = async (
         }
 
         const option = await optionRepository.findOne({
-            where:{id: attr.option_id}
-        })
-
+          where: { id: attr.option_id },
+        });
 
         return attributeValueRepository.create({
           attribute: attribute,
-            attributeOption: option || null,
-            customValue:attr.value,
-            car: savedCar
+          attributeOption: option || null,
+          customValue: attr.value,
+          car: savedCar,
         });
       });
 
-      attributeList = await attributeValueRepository.save(await Promise.all(attributePromises));
+      attributeList = await attributeValueRepository.save(
+        await Promise.all(attributePromises)
+      );
     }
-    
-    if(promotion_request){
-      const data =promationRepository.create({
-        car:savedCar,
+
+    if (promotion_request) {
+      const data = promationRepository.create({
+        car: savedCar,
         user,
-      })
+      });
 
-      await promationRepository.save(data)
+      await promationRepository.save(data);
     }
 
-    res.status(HttpStatusCode.CREATED).json(
-      ApiResponse.success(
-        {car:newCar , attribute: attributeList},
-        ErrorMessages.generateErrorMessage(entityName, "created", lang)
-      )
-    );
+    res
+      .status(HttpStatusCode.CREATED)
+      .json(
+        ApiResponse.success(
+          { car: newCar, attribute: attributeList },
+          ErrorMessages.generateErrorMessage(entityName, "created", lang)
+        )
+      );
   } catch (error) {
     next(error);
   }
 };
 
 export const updateCar = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) => {
-    try {
-      const { id } = req.params;
-      const { 
-        title, 
-        description, 
-        usdPrice, 
-        sypPrice, 
-        carTypeId, 
-        governorate, 
-        address, 
-        lat, 
-        long, 
-        isFeatured, 
-        isVerified, 
-        status,
-        attributes 
-      } = req.body;
-      
-      const lang = req.headers["accept-language"] || "ar";
-      const entityName = lang === "ar" ? "السيارة" : "car";
-      const user = req.user
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    const {
+      title,
+      description,
+      usdPrice,
+      sypPrice,
+      carTypeId,
+      governorate,
+      address,
+      lat,
+      long,
+      isFeatured,
+      isVerified,
+      status,
+      attributes,
+    } = req.body;
 
-      const car = await carRepository.findOne({
-        where: { id: Number(id) },
-        relations: ["attributes", "carType", "governorateInfo"]
-      });
+    const lang = req.headers["accept-language"] || "ar";
+    const entityName = lang === "ar" ? "السيارة" : "car";
+    const user = req.user;
 
-      if(car.user !== user){
-        throw new APIError(HttpStatusCode.FORBIDDEN , ErrorMessages.generateErrorMessage( "user" ,"forbidden" ))
-      }
-  
-      if (!car) {
+    const car = await carRepository.findOne({
+      where: { id: Number(id) },
+      relations: ["attributes", "carType", "governorateInfo"],
+    });
+
+    if (car.user !== user) {
+      throw new APIError(
+        HttpStatusCode.FORBIDDEN,
+        ErrorMessages.generateErrorMessage("user", "forbidden")
+      );
+    }
+
+    if (!car) {
+      throw new APIError(
+        HttpStatusCode.NOT_FOUND,
+        ErrorMessages.generateErrorMessage(entityName, "not found", lang)
+      );
+    }
+
+    if (title) car.title = title;
+    if (description) car.description = description;
+    if (usdPrice) car.usdPrice = Number(usdPrice);
+    if (sypPrice) car.sypPrice = Number(sypPrice);
+    if (address) car.address = address;
+    if (lat) car.lat = Number(lat);
+    if (long) car.long = Number(long);
+    if (isFeatured !== undefined) car.isFeatured = isFeatured;
+    if (isVerified !== undefined) car.isVerified = isVerified;
+    if (status) car.status = status;
+
+    if (req.files) {
+      car.images = (req.files as Express.Multer.File[]).map(
+        (file) => `/src/public/uploads/${file.filename}`
+      );
+    }
+
+    if (carTypeId) {
+      const carType = await carTypeRepository.findOneBy({ id: carTypeId });
+      if (!carType) {
         throw new APIError(
           HttpStatusCode.NOT_FOUND,
-          ErrorMessages.generateErrorMessage(entityName, "not found", lang)
+          lang === "ar" ? "نوع السيارة غير موجود" : "Car type not found"
         );
       }
-  
-      if (title) car.title = title;
-      if (description) car.description = description;
-      if (usdPrice) car.usdPrice = Number(usdPrice);
-      if (sypPrice) car.sypPrice = Number(sypPrice);
-      if (address) car.address = address;
-      if (lat) car.lat = Number(lat);
-      if (long) car.long = Number(long);
-      if (isFeatured !== undefined) car.isFeatured = isFeatured;
-      if (isVerified !== undefined) car.isVerified = isVerified;
-      if (status) car.status = status;
-  
-      if (req.files) {
-        car.images = (req.files as Express.Multer.File[]).map(
-          (file) => `/src/public/uploads/${file.filename}`
+      car.carType = carType;
+    }
+
+    if (governorate) {
+      const gov = await governorateRepository.findOneBy({ name: governorate });
+      if (!gov) {
+        throw new APIError(
+          HttpStatusCode.NOT_FOUND,
+          lang === "ar" ? "المحافظة غير موجودة" : "Governorate not found"
         );
       }
-  
-      if (carTypeId) {
-        const carType = await carTypeRepository.findOneBy({ id: carTypeId });
-        if (!carType) {
+      car.governorateInfo = gov;
+    }
+
+    if (attributes && Array.isArray(attributes)) {
+      await attributeValueRepository.delete({ car: { id: car.id } });
+
+      const attributePromises = attributes.map(async (attr) => {
+        const attribute = await attributeRepository.findOneBy({ id: attr.id });
+        if (!attribute) {
           throw new APIError(
             HttpStatusCode.NOT_FOUND,
-            lang === "ar" ? "نوع السيارة غير موجود" : "Car type not found"
+            lang === "ar" ? "السمة غير موجودة" : "Attribute not found"
           );
         }
-        car.carType = carType;
-      }
-  
-      if (governorate) {
-        const gov = await governorateRepository.findOneBy({ name: governorate });
-        if (!gov) {
-          throw new APIError(
-            HttpStatusCode.NOT_FOUND,
-            lang === "ar" ? "المحافظة غير موجودة" : "Governorate not found"
-          );
-        }
-        car.governorateInfo = gov;
-      }
 
-      if (attributes && Array.isArray(attributes)) {
+        const option = attr.option_id
+          ? await optionRepository.findOneBy({ id: attr.option_id })
+          : null;
 
-        await attributeValueRepository.delete({ car: { id: car.id } });
-
-        const attributePromises = attributes.map(async (attr) => {
-          const attribute = await attributeRepository.findOneBy({ id: attr.id });
-          if (!attribute) {
-            throw new APIError(
-              HttpStatusCode.NOT_FOUND,
-              lang === "ar" ? "السمة غير موجودة" : "Attribute not found"
-            );
-          }
-  
-          const option = attr.option_id 
-            ? await optionRepository.findOneBy({ id: attr.option_id })
-            : null;
-  
-          return attributeValueRepository.create({
-            attribute,
-            attributeOption: option,
-            customValue: attr.value,
-            car
-          });
+        return attributeValueRepository.create({
+          attribute,
+          attributeOption: option,
+          customValue: attr.value,
+          car,
         });
-  
-        car.attributes = await attributeValueRepository.save(
-          await Promise.all(attributePromises)
-        );
-      }
-  
-      await carRepository.save(car);
-  
-      res.status(HttpStatusCode.OK).json(
+      });
+
+      car.attributes = await attributeValueRepository.save(
+        await Promise.all(attributePromises)
+      );
+    }
+
+    await carRepository.save(car);
+
+    res
+      .status(HttpStatusCode.OK)
+      .json(
         ApiResponse.success(
           car,
           ErrorMessages.generateErrorMessage(entityName, "updated", lang)
         )
       );
-    } catch (error) {
-      next(error);
-    }
-  };
+  } catch (error) {
+    next(error);
+  }
+};
 
 export const deleteCar = async (
   req: Request,
@@ -500,16 +528,12 @@ export const deleteCar = async (
     const { id } = req.params;
     const lang = req.headers["accept-language"] || "ar";
     const entity = lang === "ar" ? "السيارة" : "car";
-    const user = req.user
-
-    
+    const user = req.user;
 
     const car = await carRepository.findOne({
       where: { id: Number(id) },
-      relations: ["favorites", "promotionRequests", "attributes"]
+      relations: ["favorites", "promotionRequests", "attributes"],
     });
-
-    
 
     if (!car) {
       throw new APIError(
@@ -518,18 +542,23 @@ export const deleteCar = async (
       );
     }
 
-    if(car.user !== user){
-      throw new APIError(HttpStatusCode.FORBIDDEN , ErrorMessages.generateErrorMessage( entity , "forbidden" ))
+    if (car.user !== user) {
+      throw new APIError(
+        HttpStatusCode.FORBIDDEN,
+        ErrorMessages.generateErrorMessage(entity, "forbidden")
+      );
     }
 
     await carRepository.remove(car);
 
-    res.status(HttpStatusCode.OK).json(
-      ApiResponse.success(
-        null,
-        ErrorMessages.generateErrorMessage(entity, "deleted", lang)
-      )
-    );
+    res
+      .status(HttpStatusCode.OK)
+      .json(
+        ApiResponse.success(
+          null,
+          ErrorMessages.generateErrorMessage(entity, "deleted", lang)
+        )
+      );
   } catch (error) {
     next(error);
   }

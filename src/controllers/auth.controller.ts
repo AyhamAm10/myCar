@@ -1,12 +1,15 @@
-import { Request, Response, NextFunction } from 'express';
-import { User } from '../entities/user'; 
-import { AuthService } from '../services/auth.service';
-import { JwtService } from '../services/jwt.service';
-import { LoginDto } from '../dtos/login.dto'; 
-import { RegisterDto } from '../dtos/register.dto'; 
-import { ApiResponse } from '../common/responses/api.response';
-import { AppDataSource } from '../config/data_source';
-import { UnauthorizedError } from '../common/errors/http.error';
+import { Request, Response, NextFunction } from "express";
+import { User } from "../entities/user";
+import { AuthService } from "../services/auth.service";
+import { JwtService } from "../services/jwt.service";
+import { LoginDto } from "../dtos/login.dto";
+import { RegisterDto } from "../dtos/register.dto";
+import { ApiResponse } from "../common/responses/api.response";
+import { AppDataSource } from "../config/data_source";
+import { UnauthorizedError } from "../common/errors/http.error";
+import { APIError, HttpStatusCode } from "../common/errors/api.error";
+import { ErrorMessages } from "../common/errors/ErrorMessages";
+import * as bcrypt from "bcryptjs";
 
 export class AuthController {
   private authService: AuthService;
@@ -23,7 +26,7 @@ export class AuthController {
       const user = await this.authService.register(registerDto);
       const response = ApiResponse.success(
         { user },
-        'User registered successfully'
+        "User registered successfully"
       );
       res.status(201).json(response);
     } catch (error) {
@@ -35,18 +38,21 @@ export class AuthController {
     try {
       const loginDto: LoginDto = req.body;
       const { user, tokens } = await this.authService.login(loginDto);
-      
-      res.cookie('refreshToken', tokens.refreshToken, {
+
+      res.cookie("refreshToken", tokens.refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60 * 1000 
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
-      const response = ApiResponse.success({
-        user,
-        accessToken: tokens.accessToken
-      }, 'Login successful');
+      const response = ApiResponse.success(
+        {
+          user,
+          accessToken: tokens.accessToken,
+        },
+        "Login successful"
+      );
 
       res.status(200).json(response);
     } catch (error) {
@@ -57,18 +63,15 @@ export class AuthController {
   async logout(req: Request, res: Response, next: NextFunction) {
     try {
       if (!req.user || !req.user?.id) {
-        throw new UnauthorizedError('User not authenticated');
+        throw new UnauthorizedError("User not authenticated");
       }
-  
+
       await this.authService.logout(req.user.id);
-      
-      res.clearCookie('refreshToken');
-      
-      const response = ApiResponse.success(
-        null,
-        'Logout successful'
-      );
-      
+
+      res.clearCookie("refreshToken");
+
+      const response = ApiResponse.success(null, "Logout successful");
+
       res.status(200).json(response);
     } catch (error) {
       next(error);
@@ -79,12 +82,64 @@ export class AuthController {
     try {
       const response = ApiResponse.success(
         { user: req.user },
-        'Current user retrieved'
+        "Current user retrieved"
       );
-      
+
       res.status(200).json(response);
     } catch (error) {
       next(error);
+    }
+  }
+
+  static async changePassword(req: Request, res: Response , next:NextFunction) {
+    try {
+      const userId = req.user?.id;
+      const lang = req.headers["accept-language"] || "ar";
+      const { oldPassword, newPassword } = req.body;
+  
+      if (!oldPassword || !newPassword) {
+        throw new APIError(
+          HttpStatusCode.BAD_REQUEST,
+          ErrorMessages.generateErrorMessage(
+            "oldPassword || !newPassword ",
+            "required",
+            lang
+          )
+        );
+      }
+  
+      const userRepo = AppDataSource.getRepository(User);
+      const user = await userRepo.findOne({ where: { id: userId } });
+  
+      if (!user) {
+        throw new APIError(
+          HttpStatusCode.BAD_REQUEST,
+          ErrorMessages.generateErrorMessage("user", "not found", lang)
+        );
+      }
+  
+      const isMatch = await bcrypt.compare(oldPassword, user.passwordHash);
+      if (!isMatch) {
+        throw new APIError(
+          HttpStatusCode.BAD_REQUEST,
+          ErrorMessages.generateErrorMessage("password", "invalid", lang)
+        );
+      }
+  
+      const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+      user.passwordHash = hashedNewPassword;
+      await userRepo.save(user);
+  
+      return res
+        .status(HttpStatusCode.OK)
+        .json(
+          ApiResponse.success(
+            {},
+            ErrorMessages.generateErrorMessage("password", "updated", lang)
+          )
+        );
+    } catch (error) {
+      next(error)
     }
   }
 }
