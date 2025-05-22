@@ -64,6 +64,7 @@ export class PromotionRequestController {
         ApiResponse.success(request, ErrorMessages.generateErrorMessage(entity, "created", lang))
       );
     } catch (error) {
+      console.log(error)
       next(error);
     }
   }

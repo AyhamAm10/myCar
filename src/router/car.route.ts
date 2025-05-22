@@ -5,6 +5,7 @@ import { checkRole } from "../middleware/role.middleware";
 import { createCar, deleteCar, getAllCars, getCarById, updateCar } from "../controllers/Car.controller";
 import { upload } from "../middleware/upload";
 import { CarSearchController } from "../controllers/search.controller";
+import { getHighlightedCars } from "../controllers/home.controller";
 
 const carRoute: Router = Router();
 const searchClass = new CarSearchController
@@ -27,6 +28,12 @@ carRoute.get("/",
     checkRole([UserRole.user , UserRole.admin, UserRole.superAdmin]),
     getAllCars
 );
+
+carRoute.get("/home" , 
+    authMiddleware,
+    checkRole([UserRole.user , UserRole.admin, UserRole.superAdmin]),
+    getHighlightedCars
+)
 
 carRoute.get("/:id",
     authMiddleware,
