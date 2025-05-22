@@ -32,19 +32,25 @@ export const getAllCars = async (
   try {
     const lang = req.headers["accept-language"] || "ar";
     const entity = lang === "ar" ? "السيارات" : "cars";
-    const { 
-      status, 
-      carType, 
-      governorate, 
-      minPrice, 
-      maxPrice, 
-      isFeatured, 
+    const {
+      status,
+      carType,
+      governorate,
+      minPrice,
+      maxPrice,
+      isFeatured,
       userId,
-      search, // إضافة معلمة البحث
-      sort = 'desc' // إضافة معلمة الترتيب (افتراضيًا من الأحدث)
+      search,
+      sort = 'desc',
+      page = '1',
+      limit = '10'
     } = req.query;
 
-    const currentUserId = req.user?.id; 
+    const pageNumber = parseInt(page as string, 10) || 1;
+    const pageSize = parseInt(limit as string, 10) || 10;
+    const skip = (pageNumber - 1) * pageSize;
+
+    const currentUserId = req.user?.id;
 
     let query = carRepository.createQueryBuilder("car")
       .leftJoinAndSelect("car.user", "user")
@@ -54,18 +60,16 @@ export const getAllCars = async (
       .leftJoinAndSelect("carAttributes.attribute", "attribute")
       .leftJoinAndSelect("carAttributes.attributeOption", "attributeOption");
 
-    // إضافة البحث الجزئي حسب العنوان
     if (search) {
-      query = query.andWhere("car.title LIKE :search", { 
-        search: `%${search}%` 
+      query = query.andWhere("car.title LIKE :search", {
+        search: `%${search}%`
       });
     }
 
-    // إضافة الترتيب حسب التاريخ
     if (sort === 'asc') {
-      query = query.orderBy("car.createdAt", "ASC"); // من الأقدم إلى الأحدث
+      query = query.orderBy("car.createdAt", "ASC");
     } else {
-      query = query.orderBy("car.createdAt", "DESC"); // من الأحدث إلى الأقدم (افتراضي)
+      query = query.orderBy("car.createdAt", "DESC");
     }
 
     if (status) {
@@ -96,7 +100,9 @@ export const getAllCars = async (
       query = query.andWhere("car.userId = :userId", { userId: Number(userId) });
     }
 
-    const cars = await query.getMany();
+    query = query.skip(skip).take(pageSize);
+
+    const [cars, totalCount] = await query.getManyAndCount();
 
     const formattedCarsData = cars.map((car) => {
       let attributes = [];
@@ -137,16 +143,25 @@ export const getAllCars = async (
       isFavorite: currentUserId ? favoriteCarIds.includes(car.id) : false
     }));
 
+    const pagination = {
+      total: totalCount,
+      page: pageNumber,
+      limit: pageSize,
+      totalPages: Math.ceil(totalCount / pageSize),
+    };
+
     res.status(HttpStatusCode.OK).json(
       ApiResponse.success(
         updatedCars,
-        ErrorMessages.generateErrorMessage(entity, "retrieved", lang)
+        ErrorMessages.generateErrorMessage(entity, "retrieved", lang),
+        pagination
       )
     );
   } catch (error) {
     next(error);
   }
 };
+
 
 export const getCarById = async (
   req: Request,
