@@ -1,4 +1,4 @@
-import express, { ErrorRequestHandler } from "express";
+import express, { Request , Response , NextFunction } from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import * as path from "path";
@@ -48,6 +48,9 @@ router.use("/car-types", carTypeRouter);
 router.use("/car", carRoute);
 router.use("/favorites", favoriteRoute);
 router.use("/gold", PromotionRoute);
+router.use("/carShare/:id", (req:Request ,res:Response)=>{
+  res.status(200).json({message:"ok"})
+});
 
 app.use(process.env.BASE_URL ?? "/", router);
 
