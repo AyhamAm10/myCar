@@ -13,6 +13,7 @@ import { CarAttribute } from "../entities/car-attribute";
 import { AttributeOption } from "../entities/attribute-option";
 import { PromotionRequest } from "../entities/promotion-request";
 import { Favorite } from "../entities/favorite";
+import { Not } from "typeorm";
 
 const carRepository = AppDataSource.getRepository(Car);
 const userRepository = AppDataSource.getRepository(User);
@@ -239,11 +240,28 @@ export const getCarById = async (
       favoriteCarIds = favorites.map((fav) => fav.carId);
     }
 
+     // Get recommended cars (limit 3)
+     const recommendedCars = await carRepository.find({
+      where: {
+        carTypeId: car.carTypeId,
+        governorate: car.governorate,
+        status: "active",
+        id: Not(car.id), 
+      },
+      take: 3,
+      order: { createdAt: "DESC" },
+      relations: ["carType", "governorateInfo", "attributes", "attributes.attributeOption"]
+    });
+
     const result = {
       ...car,
       attributes: formattedAttributes,
       isFavorite: userId ? favoriteCarIds.includes(car.id) : false,
+      recommended: recommendedCars,
     };
+
+   
+
     res
       .status(HttpStatusCode.OK)
       .json(
