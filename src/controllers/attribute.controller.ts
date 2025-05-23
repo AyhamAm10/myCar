@@ -476,3 +476,20 @@ export const deleteAttribute = async (
     next(error);
   }
 };
+
+export const changeAttributeEffict = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const lang = req.headers["accept-language"] || "ar";
+    const entity = lang === "ar" ? "السيارة" : "car";
+    const { id } = req.params;
+    const {value} = req.body
+
+  
+  } catch (error) {
+    next(error);
+  }
+};

@@ -211,16 +211,25 @@ export const getCarById = async (
     car.viewsCount += 1;
     await carRepository.save(car);
 
-    const formattedAttributes =
-      car.attributes?.map((attr) => ({
-        id: attr.id,
-        attributeId: attr.attribute?.id,
-        title: attr.attribute?.title,
-        value: attr.attributeOption
-          ? attr.attributeOption.value
-          : attr.customValue,
-        optionId: attr.attributeOption?.id,
-      })) || [];
+    const formattedAttributes = await Promise.all(
+      car.attributes?.map(async (attr) => {
+        const attribute = await attributeRepository.find({
+          where: { id: attr.attribute.id },
+          relations:["options"]
+        });
+        console.log(attribute);
+        return {
+          id: attr.id,
+          attributeId: attr.attribute?.id,
+          title: attr.attribute?.title,
+          value: attr.attributeOption
+            ? attr.attributeOption.value
+            : attr.customValue,
+          optionId: attr.attributeOption?.id,
+          attribute_data: attribute
+        };
+      }) || []
+    );
 
     let favoriteCarIds: number[] = [];
 
@@ -563,3 +572,4 @@ export const deleteCar = async (
     next(error);
   }
 };
+
