@@ -215,9 +215,8 @@ export const getCarById = async (
       car.attributes?.map(async (attr) => {
         const attribute = await attributeRepository.find({
           where: { id: attr.attribute.id },
-          relations:["options"]
+          relations:["options" , "parent"]
         });
-        console.log(attribute);
         return {
           id: attr.id,
           attributeId: attr.attribute?.id,
