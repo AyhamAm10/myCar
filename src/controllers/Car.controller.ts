@@ -558,7 +558,7 @@ export const deleteCar = async (
 
     const car = await carRepository.findOne({
       where: { id: Number(id) },
-      relations: ["favorites", "promotionRequests", "attributes"],
+      relations: ["favorites", "promotionRequests", "attributes" , "user"],
     });
 
     if (!car) {
@@ -568,7 +568,7 @@ export const deleteCar = async (
       );
     }
 
-    if (car.user.id !== user.id) {
+    if (car.user.id !== user?.id) {
       throw new APIError(
         HttpStatusCode.FORBIDDEN,
         ErrorMessages.generateErrorMessage(entity, "forbidden")
@@ -586,6 +586,7 @@ export const deleteCar = async (
         )
       );
   } catch (error) {
+    console.log(error)
     next(error);
   }
 };

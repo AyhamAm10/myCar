@@ -17,7 +17,7 @@ export class Favorite {
   @Column({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 
-  @ManyToOne(() => User, user => user.favorites)
+  @ManyToOne(() => User, user => user.favorites , { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: User;
 
