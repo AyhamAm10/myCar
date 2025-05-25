@@ -448,7 +448,7 @@ export const updateCar = async (
       relations: ["attributes", "carType", "governorateInfo"],
     });
 
-    if (car.user !== user) {
+    if (car.user.id !== user.id) {
       throw new APIError(
         HttpStatusCode.FORBIDDEN,
         ErrorMessages.generateErrorMessage("user", "forbidden")
@@ -568,7 +568,7 @@ export const deleteCar = async (
       );
     }
 
-    if (car.user !== user) {
+    if (car.user.id !== user.id) {
       throw new APIError(
         HttpStatusCode.FORBIDDEN,
         ErrorMessages.generateErrorMessage(entity, "forbidden")
