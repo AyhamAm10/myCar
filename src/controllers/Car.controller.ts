@@ -437,6 +437,7 @@ export const updateCar = async (
       isVerified,
       status,
       attributes,
+      keepImages
     } = req.body;
 
     const lang = req.headers["accept-language"] || "ar";
@@ -445,10 +446,10 @@ export const updateCar = async (
 
     const car = await carRepository.findOne({
       where: { id: Number(id) },
-      relations: ["attributes", "carType", "governorateInfo"],
+      relations: ["attributes", "carType", "governorateInfo" , "user"],
     });
 
-    if (car.user.id !== user.id) {
+    if (car.user?.id !== user.id) {
       throw new APIError(
         HttpStatusCode.FORBIDDEN,
         ErrorMessages.generateErrorMessage("user", "forbidden")
@@ -474,9 +475,12 @@ export const updateCar = async (
     if (status) car.status = status;
 
     if (req.files) {
-      car.images = (req.files as Express.Multer.File[]).map(
-        (file) => `/src/public/uploads/${file.filename}`
-      );
+      const files = req.files as Express.Multer.File[] || [];
+      const newImages = files.map(file => `/public/uploads/${file.filename}`);
+      car.images = [...(keepImages || []), ...newImages];
+      // car.images = (req.files as Express.Multer.File[]).map(
+      //   (file) => `/src/public/uploads/${file.filename}`
+      // );
     }
 
     if (carTypeId) {
@@ -541,6 +545,7 @@ export const updateCar = async (
         )
       );
   } catch (error) {
+    console.log(error)
     next(error);
   }
 };

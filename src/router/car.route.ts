@@ -45,6 +45,7 @@ carRoute.get("/:id",
 carRoute.put("/:id",
     authMiddleware,
     checkRole([UserRole.user , UserRole.admin, UserRole.superAdmin]),
+    upload.array("image"),
     updateCar
 );
 
