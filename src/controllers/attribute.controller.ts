@@ -299,7 +299,7 @@ export const createAttribute = async (
           ? show_in_search === "true"
           : Boolean(show_in_search),
       purpose: purpose || AttributeFor.sale,
-      icon: req.file?.filename || "",
+      icon: `/public/icon/${req.file?.filename}` || null,
       parent,
       parentOption,
       carType,
@@ -361,7 +361,6 @@ export const updateAttribute = async (
       );
     }
 
-    // تحديث الأب إذا تم التغيير
     if (parentId !== undefined) {
       const parent = parentId
         ? await attributeRepository.findOneBy({ id: parentId })
@@ -378,7 +377,6 @@ export const updateAttribute = async (
       attribute.parent = parent;
     }
 
-    // تحديث نوع السيارة
     if (car_type_id !== undefined) {
       const carType = car_type_id
         ? await AppDataSource.getRepository(CarType).findOneBy({
@@ -395,12 +393,10 @@ export const updateAttribute = async (
       attribute.carType = carType;
     }
 
-    // تحديث البيانات الأساسية
     attribute.title = title || attribute.title;
     attribute.input_type = input_type || attribute.input_type;
-    if (req.file) attribute.icon = req.file.filename;
+    if (req.file) attribute.icon = `/public/icon/${req.file?.filename}`;
 
-    // تحديث الـ Options
     if (options) {
       await attributeOptionRepository.delete({
         attribute: { id: attribute.id },

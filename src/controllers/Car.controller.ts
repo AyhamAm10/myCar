@@ -349,7 +349,7 @@ export const createCar = async (
       description,
       images: req.files
         ? (req.files as Express.Multer.File[]).map(
-            (file) => `/src/public/uploads/${file.filename}`
+            (file) => `/public/uploads/${file.filename}`
           )
         : [],
       usdPrice: Number(usdPrice),
@@ -476,11 +476,9 @@ export const updateCar = async (
 
     if (req.files) {
       const files = req.files as Express.Multer.File[] || [];
+      console.log(files)
       const newImages = files.map(file => `/public/uploads/${file.filename}`);
       car.images = [...(keepImages || []), ...newImages];
-      // car.images = (req.files as Express.Multer.File[]).map(
-      //   (file) => `/src/public/uploads/${file.filename}`
-      // );
     }
 
     if (carTypeId) {

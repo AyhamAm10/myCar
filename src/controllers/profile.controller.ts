@@ -43,7 +43,7 @@ export class ProfileController {
         if (user.image) {
           await this.deleteOldImage(user.image);
         }
-        user.image = image 
+        user.image = `/public/uploads/${image}` 
       }
 
       const updatedUser = await this.userRepository.save(user)
