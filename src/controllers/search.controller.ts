@@ -31,9 +31,7 @@ export class CarSearchController {
         .leftJoinAndSelect('car.carType', 'carType')
         .leftJoinAndSelect('car.governorateInfo', 'governorate');
 
-      // تطبيق فلتر السمات إذا وجد
       if (attributes && attributes.length > 0) {
-        // نستخدم innerJoin بدلاً من leftJoin للسمات المطلوبة
         attributes.forEach((attr, index) => {
           const alias = `filter_attr_${index}`;
           
@@ -54,15 +52,13 @@ export class CarSearchController {
 
       const [cars, total] = await query.getManyAndCount();
 
-      // إذا كان هناك فلتر سمات ولم نجد سيارات مطابقة
-      if (attributes?.length > 0 && cars.length === 0) {
-        throw new APIError(
-          HttpStatusCode.NOT_FOUND,
-          ErrorMessages.generateErrorMessage(entity, "not found", lang)
-        );
-      }
+      // if (attributes?.length > 0 && cars.length === 0) {
+      //   throw new APIError(
+      //     HttpStatusCode.NOT_FOUND,
+      //     ErrorMessages.generateErrorMessage(entity, "not found", lang)
+      //   );
+      // }
 
-      // الحصول على السيارات المفضلة إذا كان المستخدم مسجل الدخول
       let favoriteCarIds: number[] = [];
       if (currentUserId) {
         const favorites = await AppDataSource.getRepository(Favorite).find({
@@ -71,7 +67,6 @@ export class CarSearchController {
         favoriteCarIds = favorites.map(fav => fav.carId);
       }
 
-      // تنسيق بيانات السيارات بما في ذلك السمات
       const formattedCars = cars.map(car => {
         const carAttributes = car.attributes?.map(attr => ({
           id: attr.attribute?.id,
