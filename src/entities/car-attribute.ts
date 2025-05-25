@@ -11,11 +11,11 @@ export class CarAttribute {
   @Column({ name: 'custom_value', nullable: true })
   customValue: string;
   
-  @ManyToOne(() => Car, car => car.attributes)
+  @ManyToOne(() => Car, car => car.attributes , { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'car_id' })
   car: Car;
 
-  @ManyToOne(() => Attribute)
+  @ManyToOne(() => Attribute , { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'attribute_id' })
   attribute: Attribute;
 

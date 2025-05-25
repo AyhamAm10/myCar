@@ -52,11 +52,11 @@ export class PromotionRequest {
   updatedAt: Date;
 
   // Relations
-  @ManyToOne(() => User, (user) => user.promotionRequests)
+  @ManyToOne(() => User, (user) => user.promotionRequests , { onDelete: 'CASCADE' })
   @JoinColumn({ name: "user_id" })
   user: User;
 
-  @ManyToOne(() => Car, { nullable: true })
+  @ManyToOne(() => Car, { nullable: true , onDelete: 'CASCADE'  } )
   @JoinColumn({ name: "car_id" })
   car: Car;
 }
