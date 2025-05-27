@@ -23,20 +23,4 @@ export class AttributeOption {
   @OneToMany(() => Attribute, attribute => attribute.parentOption)
   childAttributes: Attribute[];
 
-  // @ManyToMany(() => Attribute)
-  // @JoinTable({
-  //   name: 'option_related_attributes',
-  //   joinColumn: { name: 'option_id', referencedColumnName: 'id' },
-  //   inverseJoinColumn: { name: 'attribute_id', referencedColumnName: 'id' }
-  // })
-  // relatedAttributes: Attribute[];
-
-  // @ManyToMany(() => AttributeOption)
-  // @JoinTable({
-  //   name: 'option_related_options',
-  //   joinColumn: { name: 'option_id', referencedColumnName: 'id' },
-  //   inverseJoinColumn: { name: 'related_option_id', referencedColumnName: 'id' }
-  // })
-  // relatedOptions: AttributeOption[];
-
 }

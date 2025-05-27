@@ -39,8 +39,8 @@ export class Car {
   @Column({ name: "car_type_id" })
   carTypeId: number;
 
-  @Column()
-  governorate: string;
+  @Column({ name: "governorate_id" })
+  governorateId: number;
 
   @Column()
   address: string;
@@ -83,7 +83,7 @@ export class Car {
   updatedAt: Date;
 
   // Relations
-  @ManyToOne(() => User, (user) => user.cars , { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.cars, { onDelete: "CASCADE" })
   @JoinColumn({ name: "user_id" })
   user: User;
 
@@ -92,7 +92,7 @@ export class Car {
   carType: CarType;
 
   @ManyToOne(() => Governorate)
-  @JoinColumn({ name: "governorate", referencedColumnName: "name" })
+  @JoinColumn({ name: "governorate_id" })
   governorateInfo: Governorate;
 
   @OneToMany(() => Favorite, (favorite) => favorite.car)

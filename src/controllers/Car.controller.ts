@@ -121,7 +121,7 @@ export const getAllCars = async (
       if (car.attributes && car.attributes.length > 0) {
         attributes = car.attributes.map((att) => ({
           id: att.attribute?.id,
-          title: att.attribute?.title,
+          title: lang == "ar" ? att.attribute.title_ar : att.attribute.title_en,
           value: att.attributeOption
             ? att.attributeOption.value
             : att.customValue,
@@ -221,7 +221,7 @@ export const getCarById = async (
         return {
           id: attr.id,
           attributeId: attr.attribute?.id,
-          title: attr.attribute?.title,
+          title: lang == "ar" ? attr.attribute.title_ar : attr.attribute.title_en,
           value: attr.attributeOption
             ? attr.attributeOption.value
             : attr.customValue,
@@ -244,7 +244,7 @@ export const getCarById = async (
      const recommendedCars = await carRepository.find({
       where: {
         carTypeId: car.carTypeId,
-        governorate: car.governorate,
+        governorateId: car.governorateId,
         status: "active",
         id: Not(car.id), 
       },
@@ -335,7 +335,7 @@ export const createCar = async (
       );
     }
 
-    const gov = await governorateRepository.findOneBy({ name: governorate });
+    const gov = await governorateRepository.findOneBy({ id: governorate });
     if (!gov) {
       throw new APIError(
         HttpStatusCode.NOT_FOUND,
@@ -355,7 +355,7 @@ export const createCar = async (
       usdPrice: Number(usdPrice),
       sypPrice: sypPrice ? Number(sypPrice) : Number(usdPrice) * 15000, // افتراضي إذا لم يتم التزويد
       carTypeId,
-      governorate,
+      governorateId: governorate,
       address,
       lat: Number(lat),
       long: Number(long),
@@ -493,7 +493,7 @@ export const updateCar = async (
     }
 
     if (governorate) {
-      const gov = await governorateRepository.findOneBy({ name: governorate });
+      const gov = await governorateRepository.findOneBy({ id: governorate });
       if (!gov) {
         throw new APIError(
           HttpStatusCode.NOT_FOUND,

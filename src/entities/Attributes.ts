@@ -29,7 +29,10 @@ export class Attribute {
     id: number;
   
     @Column()
-    title: string;
+    title_ar: string;
+
+    @Column()
+    title_en: string;
   
     @Column({ nullable: true })
     icon: string;

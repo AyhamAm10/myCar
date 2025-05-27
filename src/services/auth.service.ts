@@ -63,8 +63,7 @@ export class AuthService {
   }
 
   async logout(userId: number) {
-    // يمكنك إضافة أي منطق تحتاجه لتسجيل الخروج
-    // مثل إلغاء الـ refresh token
+  
     return true;
   }
 }

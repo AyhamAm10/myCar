@@ -14,7 +14,7 @@ export const getAllGovernorates = async (
   next: NextFunction
 ) => {
   try {
-    const lang = req.headers["accept-language"] || "ar";
+    const lang = (req.headers["accept-language"] as string) || "ar";
     const entity = lang === "ar" ? "المحافظات" : "governorates";
 
     const governorates = await governorateRepository.find();
@@ -37,18 +37,18 @@ export const getAllGovernorates = async (
   }
 };
 
-export const getGovernorateByName = async (
+export const getGovernorateById = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const { name } = req.params;
-    const lang = req.headers["accept-language"] || "ar";
+    const { id } = req.params;
+    const lang = (req.headers["accept-language"] as string) || "ar";
     const entity = lang === "ar" ? "المحافظة" : "governorate";
 
     const governorate = await governorateRepository.findOne({
-      where: { name },
+      where: { id: Number(id) },
       relations: ["cars"]
     });
 
@@ -76,29 +76,40 @@ export const createGovernorate = async (
   next: NextFunction
 ) => {
   try {
-    const { name } = req.body;
-    const lang = req.headers["accept-language"] || "ar";
+    const { nameAr, nameEn } = req.body;
+    const lang = (req.headers["accept-language"] as string) || "ar";
     const entityName = lang === "ar" ? "المحافظة" : "governorate";
 
-    if (!name) {
+    if (!nameAr || !nameEn) {
       throw new APIError(
         HttpStatusCode.BAD_REQUEST,
         ErrorMessages.generateErrorMessage(entityName, "missing fields", lang)
       );
     }
 
-    const existingGovernorate = await governorateRepository.findOneBy({ name });
-    if (existingGovernorate) {
+    const existingGovernorateAr = await governorateRepository.findOneBy({ nameAr });
+    if (existingGovernorateAr) {
       throw new APIError(
         HttpStatusCode.CONFLICT,
         lang === "ar" 
-          ? "المحافظة موجودة بالفعل" 
-          : "Governorate already exists"
+          ? "اسم المحافظة العربي موجود بالفعل" 
+          : "Governorate Arabic name already exists"
+      );
+    }
+
+    const existingGovernorateEn = await governorateRepository.findOneBy({ nameEn });
+    if (existingGovernorateEn) {
+      throw new APIError(
+        HttpStatusCode.CONFLICT,
+        lang === "ar" 
+          ? "اسم المحافظة الإنجليزي موجود بالفعل" 
+          : "Governorate English name already exists"
       );
     }
 
     const newGovernorate = governorateRepository.create({
-      name
+      nameAr,
+      nameEn
     });
 
     await governorateRepository.save(newGovernorate);
@@ -120,19 +131,19 @@ export const updateGovernorate = async (
   next: NextFunction
 ) => {
   try {
-    const { name } = req.params;
-    const { newName } = req.body;
-    const lang = req.headers["accept-language"] || "ar";
+    const { id } = req.params;
+    const { nameAr, nameEn } = req.body;
+    const lang = (req.headers["accept-language"] as string) || "ar";
     const entityName = lang === "ar" ? "المحافظة" : "governorate";
 
-    if (!newName) {
+    if (!nameAr || !nameEn) {
       throw new APIError(
         HttpStatusCode.BAD_REQUEST,
         ErrorMessages.generateErrorMessage(entityName, "missing fields", lang)
       );
     }
 
-    const governorate = await governorateRepository.findOneBy({ name });
+    const governorate = await governorateRepository.findOneBy({ id: Number(id) });
     if (!governorate) {
       throw new APIError(
         HttpStatusCode.NOT_FOUND,
@@ -140,18 +151,31 @@ export const updateGovernorate = async (
       );
     }
 
-    // Check if new name already exists
-    const existingGovernorate = await governorateRepository.findOneBy({ name: newName });
-    if (existingGovernorate && existingGovernorate.name !== name) {
+    // تحقق من عدم وجود اسم عربي جديد مستخدم من محافظة أخرى
+    const existingGovernorateAr = await governorateRepository.findOneBy({ nameAr });
+    if (existingGovernorateAr && existingGovernorateAr.id !== governorate.id) {
       throw new APIError(
         HttpStatusCode.CONFLICT,
-        lang === "ar" 
-          ? "اسم المحافظة الجديد موجود بالفعل" 
-          : "New governorate name already exists"
+        lang === "ar"
+          ? "اسم المحافظة العربي الجديد موجود بالفعل"
+          : "New Arabic governorate name already exists"
       );
     }
 
-    governorate.name = newName;
+    // تحقق من عدم وجود اسم انجليزي جديد مستخدم من محافظة أخرى
+    const existingGovernorateEn = await governorateRepository.findOneBy({ nameEn });
+    if (existingGovernorateEn && existingGovernorateEn.id !== governorate.id) {
+      throw new APIError(
+        HttpStatusCode.CONFLICT,
+        lang === "ar"
+          ? "اسم المحافظة الإنجليزي الجديد موجود بالفعل"
+          : "New English governorate name already exists"
+      );
+    }
+
+    governorate.nameAr = nameAr;
+    governorate.nameEn = nameEn;
+
     await governorateRepository.save(governorate);
 
     res.status(HttpStatusCode.OK).json(
@@ -171,12 +195,12 @@ export const deleteGovernorate = async (
   next: NextFunction
 ) => {
   try {
-    const { name } = req.params;
-    const lang = req.headers["accept-language"] || "ar";
+    const { id } = req.params;
+    const lang = (req.headers["accept-language"] as string) || "ar";
     const entity = lang === "ar" ? "المحافظة" : "governorate";
 
     const governorate = await governorateRepository.findOne({
-      where: { name },
+      where: { id: Number(id) },
       relations: ["cars"]
     });
 
@@ -187,7 +211,7 @@ export const deleteGovernorate = async (
       );
     }
 
-    // Check if governorate has associated cars
+    // التحقق من وجود سيارات مرتبطة
     if (governorate.cars && governorate.cars.length > 0) {
       throw new APIError(
         HttpStatusCode.BAD_REQUEST,

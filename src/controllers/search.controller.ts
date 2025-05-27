@@ -52,13 +52,6 @@ export class CarSearchController {
 
       const [cars, total] = await query.getManyAndCount();
 
-      // if (attributes?.length > 0 && cars.length === 0) {
-      //   throw new APIError(
-      //     HttpStatusCode.NOT_FOUND,
-      //     ErrorMessages.generateErrorMessage(entity, "not found", lang)
-      //   );
-      // }
-
       let favoriteCarIds: number[] = [];
       if (currentUserId) {
         const favorites = await AppDataSource.getRepository(Favorite).find({
@@ -70,7 +63,7 @@ export class CarSearchController {
       const formattedCars = cars.map(car => {
         const carAttributes = car.attributes?.map(attr => ({
           id: attr.attribute?.id,
-          title: attr.attribute?.title,
+          title: lang == "ar" ? attr.attribute.title_ar : attr.attribute.title_en,
           value: attr.attributeOption ? attr.attributeOption.value : attr.customValue,
           optionId: attr.attributeOption?.id
         })) || [];

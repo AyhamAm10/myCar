@@ -117,11 +117,19 @@ export const getAttributesForEditCar = async (
       );
     }
 
+    const dtaFactory = attributes.map((item) => {
+      const { title_ar, title_en, ...dataWonted } = item;
+      return {
+        title: lang == "ar" ? title_ar : title_en,
+        ...dataWonted,
+      };
+    });
+
     res
       .status(HttpStatusCode.OK)
       .json(
         ApiResponse.success(
-          attributes,
+          dtaFactory,
           ErrorMessages.generateErrorMessage(entity, "retrieved", lang)
         )
       );
@@ -152,11 +160,17 @@ export const getAttributeById = async (
       );
     }
 
+    const { title_ar, title_en, ...dataWonted } = attribute;
+    const factorData = {
+      title: lang == "ar" ? title_ar : title_en,
+      ...dataWonted,
+    };
+
     res
       .status(HttpStatusCode.OK)
       .json(
         ApiResponse.success(
-          attribute,
+          factorData,
           ErrorMessages.generateErrorMessage(entity, "retrieved", lang)
         )
       );
@@ -166,62 +180,72 @@ export const getAttributeById = async (
 };
 
 export const getChildAttributes = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) => {
-    try {
-      const { parentId } = req.params;
-      const { optionParentId } = req.body;
-      const lang = req.headers["accept-language"] || "ar";
-      const entity = lang === "ar" ? "الخصائص الفرعية" : "child attributes";
-  
-      const parentIdNum = Number(parentId);
-      console.log(parentId)
-      if (isNaN(parentIdNum)) {
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { parentId } = req.params;
+    const { optionParentId } = req.body;
+    const lang = req.headers["accept-language"] || "ar";
+    const entity = lang === "ar" ? "الخصائص الفرعية" : "child attributes";
+
+    const parentIdNum = Number(parentId);
+    console.log(parentId);
+    if (isNaN(parentIdNum)) {
+      throw new APIError(
+        HttpStatusCode.BAD_REQUEST,
+        lang === "ar" ? "معرف الخاصية غير صالح" : "Invalid attribute ID"
+      );
+    }
+
+    const whereClause: any = {
+      parent: { id: parentIdNum },
+    };
+
+    if (optionParentId) {
+      const optionParentIdNum = Number(optionParentId);
+      if (isNaN(optionParentIdNum)) {
         throw new APIError(
           HttpStatusCode.BAD_REQUEST,
-          lang === "ar" ? "معرف الخاصية غير صالح" : "Invalid attribute ID"
+          lang === "ar" ? "معرف الخيار غير صالح" : "Invalid option ID"
         );
       }
+      whereClause.parentOption = { id: optionParentIdNum };
+    }
 
-      const whereClause: any = { 
-        parent: { id: parentIdNum } 
+    const children = await attributeRepository.find({
+      where: whereClause,
+      relations: ["options"],
+    });
+
+    if (!children.length) {
+      throw new APIError(
+        HttpStatusCode.NOT_FOUND,
+        ErrorMessages.generateErrorMessage(entity, "not found", lang)
+      );
+    }
+
+    const dtaFactory = children.map((item) => {
+      const { title_ar, title_en, ...dataWonted } = item;
+      return {
+        title: lang == "ar" ? title_ar : title_en,
+        ...dataWonted,
       };
-  
-      if (optionParentId) {
-        const optionParentIdNum = Number(optionParentId);
-        if (isNaN(optionParentIdNum)) {
-          throw new APIError(
-            HttpStatusCode.BAD_REQUEST,
-            lang === "ar" ? "معرف الخيار غير صالح" : "Invalid option ID"
-          );
-        }
-        whereClause.parentOption = { id: optionParentIdNum };
-      }
-  
-      const children = await attributeRepository.find({
-        where: whereClause,
-        relations: ['options'] 
-      });
-  
-      if (!children.length) {
-        throw new APIError(
-          HttpStatusCode.NOT_FOUND,
-          ErrorMessages.generateErrorMessage(entity, "not found", lang)
-        );
-      }
-  
-      res.status(HttpStatusCode.OK).json(
+    });
+
+    res
+      .status(HttpStatusCode.OK)
+      .json(
         ApiResponse.success(
-          children,
+          dtaFactory,
           ErrorMessages.generateErrorMessage(entity, "retrieved", lang)
         )
       );
-    } catch (error) {
-      next(error);
-    }
-  };
+  } catch (error) {
+    next(error);
+  }
+};
 
 export const createAttribute = async (
   req: Request,
@@ -230,7 +254,8 @@ export const createAttribute = async (
 ) => {
   try {
     const {
-      title,
+      title_ar,
+      title_en,
       input_type,
       parentId,
       options,
@@ -238,12 +263,12 @@ export const createAttribute = async (
       purpose,
       parent_option_id,
       car_type_id,
-      hasChild
+      hasChild,
     } = req.body;
     const lang = req.headers["accept-language"] || "ar";
     const entityName = lang === "ar" ? "الخاصية" : "attribute";
 
-    if (!title || !input_type) {
+    if (!title_ar || !title_en || !input_type) {
       throw new APIError(
         HttpStatusCode.BAD_REQUEST,
         ErrorMessages.generateErrorMessage(entityName, "missing fields", lang)
@@ -292,18 +317,19 @@ export const createAttribute = async (
     }
 
     const newAttribute = attributeRepository.create({
-      title,
+      title_ar,
+      title_en,
       input_type,
       showInSearch:
         typeof show_in_search === "string"
           ? show_in_search === "true"
           : Boolean(show_in_search),
       purpose: purpose || AttributeFor.sale,
-      icon: `/public/icon/${req.file?.filename}` || null,
+      icon: req.file ? `/public/icon/${req.file.filename}` : null,
       parent,
       parentOption,
       carType,
-      hasChild
+      hasChild,
     });
 
     await attributeRepository.save(newAttribute);
@@ -345,7 +371,15 @@ export const updateAttribute = async (
 ) => {
   try {
     const { id } = req.params;
-    const { title, input_type, parentId, options, car_type_id } = req.body;
+    const {
+      title_ar,
+      title_en,
+      input_type,
+      parentId,
+      options,
+      car_type_id,
+      hasChild,
+    } = req.body;
     const lang = req.headers["accept-language"] || "ar";
     const entityName = lang === "ar" ? "الخاصية" : "attribute";
 
@@ -393,9 +427,11 @@ export const updateAttribute = async (
       attribute.carType = carType;
     }
 
-    attribute.title = title || attribute.title;
+    attribute.title_ar = title_ar || attribute.title_ar;
+    attribute.title_en = title_en || attribute.title_en;
     attribute.input_type = input_type || attribute.input_type;
-    if (req.file) attribute.icon = `/public/icon/${req.file?.filename}`;
+    if (req.file) attribute.icon = `/public/icon/${req.file.filename}`;
+    if (hasChild !== undefined) attribute.hasChild = hasChild;
 
     if (options) {
       await attributeOptionRepository.delete({
@@ -482,9 +518,7 @@ export const changeAttributeEffict = async (
     const lang = req.headers["accept-language"] || "ar";
     const entity = lang === "ar" ? "السيارة" : "car";
     const { id } = req.params;
-    const {value} = req.body
-
-  
+    const { value } = req.body;
   } catch (error) {
     next(error);
   }
