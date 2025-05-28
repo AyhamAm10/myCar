@@ -226,19 +226,19 @@ export const getChildAttributes = async (
       );
     }
 
-    const dtaFactory = children.map((item) => {
-      const { title_ar, title_en, ...dataWonted } = item;
-      return {
-        title: lang == "ar" ? title_ar : title_en,
-        ...dataWonted,
-      };
-    });
+    // const dtaFactory = children.map((item) => {
+    //   const { title_ar, title_en, ...dataWonted } = item;
+    //   return {
+    //     title: lang == "ar" ? title_ar : title_en,
+    //     ...dataWonted,
+    //   };
+    // });
 
     res
       .status(HttpStatusCode.OK)
       .json(
         ApiResponse.success(
-          dtaFactory,
+          children,
           ErrorMessages.generateErrorMessage(entity, "retrieved", lang)
         )
       );
