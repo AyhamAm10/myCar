@@ -56,7 +56,10 @@ paths:
             schema:
               type: object
               properties:
-                title:
+                title_ar:
+                  type: string
+              properties:
+                title_en:
                   type: string
                 input_type:
                   type: string
@@ -68,7 +71,9 @@ paths:
                   items:
                     type: object
                     properties:
-                      value:
+                      value_ar:
+                        type: string
+                      value_en:
                         type: string
                 show_in_search:
                   type: boolean
