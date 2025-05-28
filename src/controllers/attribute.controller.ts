@@ -335,7 +335,7 @@ export const createAttribute = async (
     await attributeRepository.save(newAttribute);
 
     if (options && Array.isArray(options)) {
-      const values = options.map((o) => o.value.toLowerCase().trim());
+      const values = options.map((o) => o.value_en.toLowerCase().trim());
       if (new Set(values).size !== options.length) {
         throw new APIError(
           HttpStatusCode.BAD_REQUEST,
@@ -344,7 +344,8 @@ export const createAttribute = async (
       }
 
       const attributeOptions = options.map((option) => ({
-        value: option.value.trim(),
+        value_en: option.value_en.trim(),
+        value_ar: option.value_ar.trim(),
         attribute: newAttribute,
       }));
 

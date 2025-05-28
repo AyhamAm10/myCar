@@ -64,7 +64,8 @@ export class CarSearchController {
         const carAttributes = car.attributes?.map(attr => ({
           id: attr.attribute?.id,
           title: lang == "ar" ? attr.attribute.title_ar : attr.attribute.title_en,
-          value: attr.attributeOption ? attr.attributeOption.value : attr.customValue,
+          value: attr.attributeOption ? lang == "ar" ? attr.attributeOption.value_ar : attr.attributeOption.value_en
+           : attr.customValue,
           optionId: attr.attributeOption?.id
         })) || [];
 

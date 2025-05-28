@@ -4,7 +4,7 @@ import { createAttribute, deleteAttribute, getAttributeById, getAttributes, upda
 import { uploadIcon } from "../middleware/upload";
 import { UserRole } from "../entities/user";
 import { checkRole } from "../middleware/role.middleware";
-import { createGovernorate, getAllGovernorates, getGovernorateByName } from "../controllers/governorate.controller";
+import { createGovernorate, deleteGovernorate, getAllGovernorates, getGovernorateById, updateGovernorate } from "../controllers/governorate.controller";
 
 const governorateRouter: Router = Router();
 
@@ -19,20 +19,20 @@ governorateRouter.get("/",
 );
 
 governorateRouter.get("/:name",
-    getGovernorateByName
+    getGovernorateById
 );
 
 
 governorateRouter.put("/:name",
     authMiddleware,
     checkRole([UserRole.admin, UserRole.superAdmin]),
-    getGovernorateByName
+    updateGovernorate
 );
 
 governorateRouter.delete("/:name",
     authMiddleware,
     checkRole([UserRole.admin, UserRole.superAdmin]),
-    getGovernorateByName
+    deleteGovernorate
 );
 
 

@@ -8,7 +8,10 @@ export class AttributeOption {
   id: number;
 
   @Column()
-  value: string;
+  value_ar: string;
+
+  @Column()
+  value_en: string;
 
   @Column({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;

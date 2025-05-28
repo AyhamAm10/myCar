@@ -123,7 +123,7 @@ export const getAllCars = async (
           id: att.attribute?.id,
           title: lang == "ar" ? att.attribute.title_ar : att.attribute.title_en,
           value: att.attributeOption
-            ? att.attributeOption.value
+            ? lang == "ar" ? att.attributeOption.value_ar : att.attributeOption.value_en
             : att.customValue,
           optionId: att.attributeOption?.id,
         }));
@@ -223,7 +223,7 @@ export const getCarById = async (
           attributeId: attr.attribute?.id,
           title: lang == "ar" ? attr.attribute.title_ar : attr.attribute.title_en,
           value: attr.attributeOption
-            ? attr.attributeOption.value
+            ? lang == "ar" ?  attr.attributeOption.value_ar : attr.attributeOption.value_en
             : attr.customValue,
           optionId: attr.attributeOption?.id,
           attribute_data: attribute
