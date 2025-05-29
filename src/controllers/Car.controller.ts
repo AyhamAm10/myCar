@@ -45,6 +45,9 @@ export const getAllCars = async (
       sort = "desc",
       page = "1",
       limit = "10",
+      lat,
+      long,
+      radius = "10", 
     } = req.query;
 
     const pageNumber = parseInt(page as string, 10) || 1;
@@ -112,6 +115,25 @@ export const getAllCars = async (
       });
     }
 
+    if (lat && long) {
+      const userLat = parseFloat(lat as string);
+      const userLong = parseFloat(long as string);
+      const searchRadius = parseFloat(radius as string); // بالكيلومتر
+
+      
+      query = query.andWhere(
+        `ST_DistanceSphere(
+          ST_MakePoint(car.long, car.lat),
+          ST_MakePoint(:userLong, :userLat)
+        ) <= :maxDistance`,
+        {
+          userLong,
+          userLat,
+          maxDistance: searchRadius * 1000, 
+        }
+      );
+    }
+
     query = query.skip(skip).take(pageSize);
 
     const [cars, totalCount] = await query.getManyAndCount();
@@ -148,7 +170,6 @@ export const getAllCars = async (
       const favorites = await favoriteRepository.find({
         where: { userId: currentUserId },
       });
-
       favoriteCarIds = favorites.map((fav) => fav.carId);
     }
 
@@ -177,6 +198,7 @@ export const getAllCars = async (
     next(error);
   }
 };
+
 
 export const getCarById = async (
   req: Request,
