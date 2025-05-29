@@ -35,7 +35,7 @@ authRouter.post("/register", (req, res, next) => {
   );
 
   authRouter.post("/forgit/password", 
-    authMiddleware,
+    // authMiddleware,
     (req, res, next) => {
       AuthController.resetPassword(req, res, next)
     }
