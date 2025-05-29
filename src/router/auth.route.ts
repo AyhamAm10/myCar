@@ -34,6 +34,13 @@ authRouter.post("/register", (req, res, next) => {
     }
   );
 
+  authRouter.post("/forgit/password", 
+    authMiddleware,
+    (req, res, next) => {
+      AuthController.resetPassword(req, res, next)
+    }
+  );
+
   authRouter.post("/me", authMiddleware, (req, res, next) => {
     authController.getCurrentUser(req, res, next);
   });
