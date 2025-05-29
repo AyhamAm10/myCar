@@ -13,6 +13,7 @@ import { GuestSession } from "../entities/guest-session";
 import { Notification } from "../entities/notification";
 import { PromotionRequest } from "../entities/promotion-request";
 import { User } from "../entities/user";
+import { Otp } from "../entities/otp";
 
 dotenv.config();
 const { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME, NODE_ENV } =
@@ -41,7 +42,8 @@ export const AppDataSource = new DataSource({
     GuestSession,
     Notification,
     PromotionRequest,
-    User
+    User,
+    Otp
   ],
 
   migrations: [__dirname + "/../migrations/*.ts"],

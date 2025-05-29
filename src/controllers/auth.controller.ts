@@ -91,12 +91,12 @@ export class AuthController {
     }
   }
 
-  static async changePassword(req: Request, res: Response , next:NextFunction) {
+  static async changePassword(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.id;
       const lang = req.headers["accept-language"] || "ar";
       const { oldPassword, newPassword } = req.body;
-  
+
       if (!oldPassword || !newPassword) {
         throw new APIError(
           HttpStatusCode.BAD_REQUEST,
@@ -107,17 +107,17 @@ export class AuthController {
           )
         );
       }
-  
+
       const userRepo = AppDataSource.getRepository(User);
       const user = await userRepo.findOne({ where: { id: userId } });
-  
+
       if (!user) {
         throw new APIError(
           HttpStatusCode.BAD_REQUEST,
           ErrorMessages.generateErrorMessage("user", "not found", lang)
         );
       }
-  
+
       const isMatch = await bcrypt.compare(oldPassword, user.passwordHash);
       if (!isMatch) {
         throw new APIError(
@@ -125,11 +125,11 @@ export class AuthController {
           ErrorMessages.generateErrorMessage("password", "invalid", lang)
         );
       }
-  
+
       const hashedNewPassword = await bcrypt.hash(newPassword, 10);
       user.passwordHash = hashedNewPassword;
       await userRepo.save(user);
-  
+
       return res
         .status(HttpStatusCode.OK)
         .json(
@@ -139,7 +139,36 @@ export class AuthController {
           )
         );
     } catch (error) {
-      next(error)
+      next(error);
+    }
+  }
+
+  static async resetPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userRepository = AppDataSource.getRepository(User);
+      const { phone, newPassword } = req.body;
+      if (!phone || !newPassword) {
+        return res
+          .status(HttpStatusCode.BAD_REQUEST)
+          .json({ message: "Phone and new password are required" });
+      }
+
+      const user = await userRepository.findOne({ where: { phone } });
+      if (!user) {
+        return res
+          .status(HttpStatusCode.NOT_FOUND)
+          .json({ message: "User not found" });
+      }
+      
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      user.passwordHash = hashedPassword;
+      await userRepository.save(user);
+
+      res
+        .status(HttpStatusCode.OK)
+        .json({ message: "Password reset successfully" });
+    } catch (error) {
+      next(error);
     }
   }
 }
