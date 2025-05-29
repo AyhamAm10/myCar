@@ -60,7 +60,7 @@ export const getAllCars = async (
       .createQueryBuilder("car")
       .leftJoinAndSelect("car.user", "user")
       .leftJoinAndSelect("car.carType", "carType")
-      .leftJoinAndSelect("car.governorateInfo", "governorate")
+      .leftJoinAndSelect("car.governorateInfo", "governorateInfo")
       .leftJoinAndSelect("car.attributes", "carAttributes")
       .leftJoinAndSelect("carAttributes.attribute", "attribute")
       .leftJoinAndSelect("carAttributes.attributeOption", "attributeOption");
@@ -88,7 +88,7 @@ export const getAllCars = async (
     }
 
     if (governorate) {
-      query = query.andWhere("car.governorate = :governorate", { governorate });
+      query = query.andWhere("car.governorateInfo = :governorate", { governorate });
     }
 
     if (minPrice) {
@@ -116,23 +116,27 @@ export const getAllCars = async (
     }
 
     if (lat && long) {
-      const userLat = parseFloat(lat as string);
-      const userLong = parseFloat(long as string);
-      const searchRadius = parseFloat(radius as string); // بالكيلومتر
+  const userLat = parseFloat(lat as string);
+  const userLong = parseFloat(long as string);
+  const searchRadius = parseFloat(radius as string);
 
-      
-      query = query.andWhere(
-        `ST_DistanceSphere(
-          ST_MakePoint(car.long, car.lat),
-          ST_MakePoint(:userLong, :userLat)
-        ) <= :maxDistance`,
-        {
-          userLong,
-          userLat,
-          maxDistance: searchRadius * 1000, 
-        }
-      );
+  const earthRadiusKm = 6371; 
+
+  query = query.andWhere(
+    `(${earthRadiusKm} * acos(
+        cos(radians(:userLat)) * cos(radians(car.lat)) *
+        cos(radians(car.long) - radians(:userLong)) +
+        sin(radians(:userLat)) * sin(radians(car.lat))
+      )
+    ) <= :maxDistance`,
+    {
+      userLat,
+      userLong,
+      maxDistance: searchRadius,
     }
+  );
+}
+
 
     query = query.skip(skip).take(pageSize);
 
