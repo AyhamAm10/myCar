@@ -42,7 +42,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedError('Invalid credentials');
+      throw new UnauthorizedError('Invalid user');
     }
 
     const isValidPassword = await bcrypt.compare(
@@ -51,7 +51,7 @@ export class AuthService {
     );
 
     if (!isValidPassword) {
-      throw new UnauthorizedError('Invalid credentials');
+      throw new UnauthorizedError('Invalid Password');
     }
 
     const tokens = this.jwtService.generateTokens(user);
