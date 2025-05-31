@@ -47,7 +47,7 @@ export const getAllCars = async (
       limit = "10",
       lat,
       long,
-      radius = "10", 
+      radius = "10",
     } = req.query;
 
     const pageNumber = parseInt(page as string, 10) || 1;
@@ -88,7 +88,9 @@ export const getAllCars = async (
     }
 
     if (governorate) {
-      query = query.andWhere("car.governorateInfo = :governorate", { governorate });
+      query = query.andWhere("car.governorateInfo = :governorate", {
+        governorate,
+      });
     }
 
     if (minPrice) {
@@ -116,27 +118,26 @@ export const getAllCars = async (
     }
 
     if (lat && long) {
-  const userLat = parseFloat(lat as string);
-  const userLong = parseFloat(long as string);
-  const searchRadius = parseFloat(radius as string);
+      const userLat = parseFloat(lat as string);
+      const userLong = parseFloat(long as string);
+      const searchRadius = parseFloat(radius as string);
 
-  const earthRadiusKm = 6371; 
+      const earthRadiusKm = 6371;
 
-  query = query.andWhere(
-    `(${earthRadiusKm} * acos(
+      query = query.andWhere(
+        `(${earthRadiusKm} * acos(
         cos(radians(:userLat)) * cos(radians(car.lat)) *
         cos(radians(car.long) - radians(:userLong)) +
         sin(radians(:userLat)) * sin(radians(car.lat))
       )
     ) <= :maxDistance`,
-    {
-      userLat,
-      userLong,
-      maxDistance: searchRadius,
+        {
+          userLat,
+          userLong,
+          maxDistance: searchRadius,
+        }
+      );
     }
-  );
-}
-
 
     query = query.skip(skip).take(pageSize);
 
@@ -149,7 +150,9 @@ export const getAllCars = async (
           id: att.attribute?.id,
           title: lang == "ar" ? att.attribute.title_ar : att.attribute.title_en,
           value: att.attributeOption
-            ? lang == "ar" ? att.attributeOption.value_ar : att.attributeOption.value_en
+            ? lang == "ar"
+              ? att.attributeOption.value_ar
+              : att.attributeOption.value_en
             : att.customValue,
           optionId: att.attributeOption?.id,
         }));
@@ -203,7 +206,6 @@ export const getAllCars = async (
   }
 };
 
-
 export const getCarById = async (
   req: Request,
   res: Response,
@@ -242,17 +244,20 @@ export const getCarById = async (
       car.attributes?.map(async (attr) => {
         const attribute = await attributeRepository.find({
           where: { id: attr.attribute.id },
-          relations:["options" , "parent"]
+          relations: ["options", "parent"],
         });
         return {
           id: attr.id,
           attributeId: attr.attribute?.id,
-          title: lang == "ar" ? attr.attribute.title_ar : attr.attribute.title_en,
+          title:
+            lang == "ar" ? attr.attribute.title_ar : attr.attribute.title_en,
           value: attr.attributeOption
-            ? lang == "ar" ?  attr.attributeOption.value_ar : attr.attributeOption.value_en
+            ? lang == "ar"
+              ? attr.attributeOption.value_ar
+              : attr.attributeOption.value_en
             : attr.customValue,
           optionId: attr.attributeOption?.id,
-          attribute_data: attribute
+          attribute_data: attribute,
         };
       }) || []
     );
@@ -266,17 +271,22 @@ export const getCarById = async (
       favoriteCarIds = favorites.map((fav) => fav.carId);
     }
 
-     // Get recommended cars (limit 3)
-     const recommendedCars = await carRepository.find({
+    // Get recommended cars (limit 3)
+    const recommendedCars = await carRepository.find({
       where: {
         carTypeId: car.carTypeId,
         governorateId: car.governorateId,
         status: "active",
-        id: Not(car.id), 
+        id: Not(car.id),
       },
       take: 3,
       order: { createdAt: "DESC" },
-      relations: ["carType", "governorateInfo", "attributes", "attributes.attributeOption"]
+      relations: [
+        "carType",
+        "governorateInfo",
+        "attributes",
+        "attributes.attributeOption",
+      ],
     });
 
     const result = {
@@ -285,8 +295,6 @@ export const getCarById = async (
       isFavorite: userId ? favoriteCarIds.includes(car.id) : false,
       recommended: recommendedCars,
     };
-
-   
 
     res
       .status(HttpStatusCode.OK)
@@ -463,7 +471,7 @@ export const updateCar = async (
       isVerified,
       status,
       attributes,
-      keepImages
+      keepImages,
     } = req.body;
 
     const lang = req.headers["accept-language"] || "ar";
@@ -472,7 +480,7 @@ export const updateCar = async (
 
     const car = await carRepository.findOne({
       where: { id: Number(id) },
-      relations: ["attributes", "carType", "governorateInfo" , "user"],
+      relations: ["attributes", "carType", "governorateInfo", "user"],
     });
 
     if (car.user?.id !== user.id) {
@@ -501,9 +509,9 @@ export const updateCar = async (
     if (status) car.status = status;
 
     if (req.files) {
-      const files = req.files as Express.Multer.File[] || [];
-      console.log(files)
-      const newImages = files.map(file => `/public/uploads/${file.filename}`);
+      const files = (req.files as Express.Multer.File[]) || [];
+      console.log(files);
+      const newImages = files.map((file) => `/public/uploads/${file.filename}`);
       car.images = [...(keepImages || []), ...newImages];
     }
 
@@ -569,7 +577,7 @@ export const updateCar = async (
         )
       );
   } catch (error) {
-    console.log(error)
+    console.log(error);
     next(error);
   }
 };
@@ -587,7 +595,7 @@ export const deleteCar = async (
 
     const car = await carRepository.findOne({
       where: { id: Number(id) },
-      relations: ["favorites", "promotionRequests", "attributes" , "user"],
+      relations: ["favorites", "promotionRequests", "attributes", "user"],
     });
 
     if (!car) {
@@ -615,8 +623,7 @@ export const deleteCar = async (
         )
       );
   } catch (error) {
-    console.log(error)
+    console.log(error);
     next(error);
   }
 };
-

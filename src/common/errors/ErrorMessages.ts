@@ -116,6 +116,8 @@ export class ErrorMessages {
       }
     };
 
-    return messages[lang]?.[errorType] || messages[lang]["internal"] || `${entity} error occurred`;
+    lang = lang in messages ? lang : "en";
+
+    return messages[lang][errorType] || messages[lang]["internal"] || `${entity} error occurred`;
   }
 }
