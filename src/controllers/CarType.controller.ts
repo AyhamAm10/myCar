@@ -18,7 +18,6 @@ export const getAllCarTypes = async (
     const entity = lang === "ar" ? "أنواع السيارات" : "car types";
 
     const carTypes = await carTypeRepository.find({
-      relations: ["cars"],
       order: { name: "ASC" }
     });
 
