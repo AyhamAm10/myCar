@@ -8,6 +8,10 @@ import {
 import { User } from "./user";
 import { Car } from "./car";
 
+export enum TypePromotion {
+  account = "account_verification",
+  listing = "listing_promotion"
+}
 @Entity("promotion_requests")
 export class PromotionRequest {
   @PrimaryGeneratedColumn()
@@ -16,15 +20,15 @@ export class PromotionRequest {
   @Column({ name: "user_id" })
   userId: number;
 
-  @Column({ name: "car_id", nullable: true })
+  @Column({ name: "car_id", nullable: true  } )
   carId: number;
 
   @Column({
     name: "request_type",
     type: "enum",
-    enum: ["account_verification", "listing_promotion"],
+    enum: TypePromotion,
   })
-  requestType: "account_verification" | "listing_promotion";
+  requestType: TypePromotion;
 
   @Column({
     type: "enum",

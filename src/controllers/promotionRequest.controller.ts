@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../config/data_source";
-import { PromotionRequest } from "../entities/promotion-request";
+import { PromotionRequest, TypePromotion } from "../entities/promotion-request";
 import { APIError, HttpStatusCode } from "../common/errors/api.error";
 import { ApiResponse } from "../common/responses/api.response";
 import { ErrorMessages } from "../common/errors/ErrorMessages";
@@ -8,6 +8,8 @@ import { Car } from "../entities/car";
 import { User } from "../entities/user";
 
 const promotionRequestRepo = AppDataSource.getRepository(PromotionRequest);
+const carRepo = AppDataSource.getRepository(Car);
+const userRepo = AppDataSource.getRepository(User);
 
 export class PromotionRequestController {
   static async createAccountVerificationRequest(
@@ -29,7 +31,7 @@ export class PromotionRequestController {
 
       const request = promotionRequestRepo.create({
         userId,
-        requestType: "account_verification",
+        requestType: TypePromotion.account,
       });
 
       await promotionRequestRepo.save(request);
@@ -68,7 +70,7 @@ export class PromotionRequestController {
       const request = promotionRequestRepo.create({
         userId,
         carId,
-        requestType: "listing_promotion",
+        requestType: TypePromotion.listing,
       });
 
       await promotionRequestRepo.save(request);
@@ -126,7 +128,7 @@ export class PromotionRequestController {
   ) {
     try {
       const { id } = req.params;
-      const { status, type , adminNotes } = req.body;
+      const { status, type, adminNotes } = req.body;
       const lang = req.headers["accept-language"] || "ar";
       const entity = lang === "ar" ? "الطلب" : "request";
 
@@ -139,8 +141,8 @@ export class PromotionRequestController {
       }
 
       const request = await promotionRequestRepo.findOne({
-        where: { id: +id },
-        relations: ["car" , "user"],
+        where: { id: Number(id) },
+        relations: ["car", "user"],
       });
 
       if (!request) {
@@ -155,17 +157,52 @@ export class PromotionRequestController {
 
       await promotionRequestRepo.save(request);
 
-
       if (status == "approved") {
-        const car = request.car;
-        car.isVerified = true;
-        await AppDataSource.getRepository(Car).save(car);
+        if (type == "car") {
+          const car = await carRepo.findOneBy({ id: request.carId });
+          if (!car) {
+            throw new APIError(
+              HttpStatusCode.NOT_FOUND,
+              ErrorMessages.generateErrorMessage("car", "not found", lang)
+            );
+          }
+          car.isVerified = true;
+          await carRepo.save(car);
+        } else if (type == "user") {
+          const user = await userRepo.findOneBy({ id: request.userId });
+          if (!user) {
+            throw new APIError(
+              HttpStatusCode.NOT_FOUND,
+              ErrorMessages.generateErrorMessage("user", "not found", lang)
+            );
+          }
+          user.verified = true;
+          await userRepo.save(user);
+        }
       }
 
       if (status == "rejected") {
-        const car = request.car;
-        car.isVerified = false;
-        await AppDataSource.getRepository(Car).save(car);
+        if (type == "car") {
+          const car = await carRepo.findOneBy({ id: request.carId });
+          if (!car) {
+            throw new APIError(
+              HttpStatusCode.NOT_FOUND,
+              ErrorMessages.generateErrorMessage("car", "not found", lang)
+            );
+          }
+          car.isVerified = false;
+          await carRepo.save(car);
+        } else if (type == "user") {
+          const user = await userRepo.findOneBy({ id: request.userId });
+          if (!user) {
+            throw new APIError(
+              HttpStatusCode.NOT_FOUND,
+              ErrorMessages.generateErrorMessage("car", "not found", lang)
+            );
+          }
+          user.verified = false;
+          await userRepo.save(user);
+        }
       }
 
       return res
@@ -189,7 +226,7 @@ export class PromotionRequestController {
 
       const request = await promotionRequestRepo.findOne({
         where: { id: +id },
-        relations: ["car" , "user"],
+        relations: ["car", "user"],
       });
 
       if (!request) {
@@ -200,20 +237,6 @@ export class PromotionRequestController {
       }
 
       await promotionRequestRepo.remove(request);
-      const car = request.car;
-      const user = request.user
-      if (car) {
-        car.isVerified = false;
-        await AppDataSource.getRepository(Car).save(car);
-      }
-
-      if (user) {
-        user.verified = false;
-        await AppDataSource.getRepository(User).save(user);
-      }
-
-
-
       return res
         .status(HttpStatusCode.OK)
         .json(

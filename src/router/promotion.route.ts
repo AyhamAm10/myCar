@@ -16,7 +16,7 @@ PromotionRoute.post(
 PromotionRoute.post(
   "/listing-promotion",
   authMiddleware,
-  checkRole([UserRole.user]),
+  checkRole([UserRole.user , UserRole.superAdmin]),
   PromotionRequestController.createListingPromotionRequest.bind(PromotionRequestController)
 );
 
