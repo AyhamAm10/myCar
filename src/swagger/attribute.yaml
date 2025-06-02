@@ -58,7 +58,6 @@ paths:
               properties:
                 title_ar:
                   type: string
-              properties:
                 title_en:
                   type: string
                 input_type:
