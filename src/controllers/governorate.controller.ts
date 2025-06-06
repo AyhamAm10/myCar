@@ -48,8 +48,7 @@ export const getGovernorateById = async (
     const entity = lang === "ar" ? "المحافظة" : "governorate";
 
     const governorate = await governorateRepository.findOne({
-      where: { id: Number(id) },
-      relations: ["cars"]
+      where: { id: Number(id) }
     });
 
     if (!governorate) {
@@ -151,7 +150,6 @@ export const updateGovernorate = async (
       );
     }
 
-    // تحقق من عدم وجود اسم عربي جديد مستخدم من محافظة أخرى
     const existingGovernorateAr = await governorateRepository.findOneBy({ nameAr });
     if (existingGovernorateAr && existingGovernorateAr.id !== governorate.id) {
       throw new APIError(
@@ -211,7 +209,6 @@ export const deleteGovernorate = async (
       );
     }
 
-    // التحقق من وجود سيارات مرتبطة
     if (governorate.cars && governorate.cars.length > 0) {
       throw new APIError(
         HttpStatusCode.BAD_REQUEST,
