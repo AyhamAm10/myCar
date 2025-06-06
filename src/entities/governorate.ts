@@ -20,6 +20,6 @@ export class Governorate {
   createdAt: Date;
 
   // Relations
-  @OneToMany(() => Car, (car) => car.governorateId)
+  @OneToMany(() => Car, (car) => car.governorateInfo)
   cars: Car[];
 }
