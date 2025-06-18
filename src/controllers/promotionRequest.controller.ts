@@ -6,12 +6,90 @@ import { ApiResponse } from "../common/responses/api.response";
 import { ErrorMessages } from "../common/errors/ErrorMessages";
 import { Car } from "../entities/car";
 import { User } from "../entities/user";
+import { BadRequestError } from "../common/errors/http.error";
 
 const promotionRequestRepo = AppDataSource.getRepository(PromotionRequest);
 const carRepo = AppDataSource.getRepository(Car);
 const userRepo = AppDataSource.getRepository(User);
 
 export class PromotionRequestController {
+  // static async createAccountVerificationRequest(
+  //   req: Request,
+  //   res: Response,
+  //   next: NextFunction
+  // ) {
+  //   try {
+  //     const userId = req.user?.id;
+  //     const lang = req.headers["accept-language"] || "ar";
+  //     const entity = lang === "ar" ? "طلب التوثيق" : "verification request";
+
+  //     if (!userId) {
+  //       throw new APIError(
+  //         HttpStatusCode.UNAUTHORIZED,
+  //         ErrorMessages.generateErrorMessage(entity, "unauthorized", lang)
+  //       );
+  //     }
+
+  //     const request = promotionRequestRepo.create({
+  //       userId,
+  //       requestType: TypePromotion.account,
+  //     });
+
+  //     await promotionRequestRepo.save(request);
+
+  //     return res
+  //       .status(HttpStatusCode.CREATED)
+  //       .json(
+  //         ApiResponse.success(
+  //           request,
+  //           ErrorMessages.generateErrorMessage(entity, "created", lang)
+  //         )
+  //       );
+  //   } catch (error) {
+  //     next(error);
+  //   }
+  // }
+
+  // static async createListingPromotionRequest(
+  //   req: Request,
+  //   res: Response,
+  //   next: NextFunction
+  // ) {
+  //   try {
+  //     const userId = req.user?.id;
+  //     const { carId } = req.body;
+  //     const lang = req.headers["accept-language"] || "ar";
+  //     const entity = lang === "ar" ? "طلب الترقية" : "promotion request";
+
+  //     if (!userId || !carId) {
+  //       throw new APIError(
+  //         HttpStatusCode.BAD_REQUEST,
+  //         ErrorMessages.generateErrorMessage(entity, "missing fields", lang)
+  //       );
+  //     }
+
+  //     const request = promotionRequestRepo.create({
+  //       userId,
+  //       carId,
+  //       requestType: TypePromotion.listing,
+  //     });
+
+  //     await promotionRequestRepo.save(request);
+
+  //     return res
+  //       .status(HttpStatusCode.CREATED)
+  //       .json(
+  //         ApiResponse.success(
+  //           request,
+  //           ErrorMessages.generateErrorMessage(entity, "created", lang)
+  //         )
+  //       );
+  //   } catch (error) {
+  //     console.log(error);
+  //     next(error);
+  //   }
+  // }
+
   static async createAccountVerificationRequest(
     req: Request,
     res: Response,
@@ -27,6 +105,39 @@ export class PromotionRequestController {
           HttpStatusCode.UNAUTHORIZED,
           ErrorMessages.generateErrorMessage(entity, "unauthorized", lang)
         );
+      }
+
+      const existingRequest = await promotionRequestRepo.findOne({
+        where: { userId, requestType: TypePromotion.account },
+        order: { createdAt: "DESC" },
+      });
+
+      if (existingRequest) {
+        let message = "";
+        switch (existingRequest.status) {
+          case "pending":
+            message =
+              lang === "ar"
+                ? "يوجد طلب قيد المعالجة."
+                : "A request is still pending.";
+            break;
+          case "approved":
+            message =
+              lang === "ar"
+                ? "تمت الموافقة على طلب سابق."
+                : "A previous request was approved.";
+            break;
+          case "rejected":
+            message =
+              lang === "ar"
+                ? "تم رفض الطلب السابق. يمكنك إعادة المحاولة."
+                : "Previous request was rejected. You may try again.";
+            break;
+        }
+        // return res
+        //   .status(HttpStatusCode.BAD_REQUEST)
+        //   .json(ApiResponse.error(message));
+        throw new BadRequestError(message);
       }
 
       const request = promotionRequestRepo.create({
@@ -65,6 +176,40 @@ export class PromotionRequestController {
           HttpStatusCode.BAD_REQUEST,
           ErrorMessages.generateErrorMessage(entity, "missing fields", lang)
         );
+      }
+
+      const existingRequest = await promotionRequestRepo.findOne({
+        where: {
+          userId,
+          carId,
+          requestType: TypePromotion.listing,
+        },
+        order: { createdAt: "DESC" },
+      });
+
+      if (existingRequest) {
+        let message = "";
+        switch (existingRequest.status) {
+          case "pending":
+            message =
+              lang === "ar"
+                ? "يوجد طلب قيد المعالجة لهذه السيارة."
+                : "A request is still pending for this car.";
+            break;
+          case "approved":
+            message =
+              lang === "ar"
+                ? "تمت الموافقة على طلب سابق لهذه السيارة."
+                : "A previous request for this car was approved.";
+            break;
+          case "rejected":
+            message =
+              lang === "ar"
+                ? "تم رفض الطلب السابق لهذه السيارة. يمكنك إعادة المحاولة."
+                : "Previous request for this car was rejected. You may try again.";
+            break;
+        }
+        throw new BadRequestError(message);
       }
 
       const request = promotionRequestRepo.create({
