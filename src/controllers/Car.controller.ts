@@ -334,6 +334,7 @@ export const createCar = async (
       attributes,
       promotion_request,
     } = req.body;
+    console.log(req.body)
     const userId = req.user?.id;
     const lang = req.headers["accept-language"] || "ar";
     const entityName = lang === "ar" ? "السيارة" : "car";
