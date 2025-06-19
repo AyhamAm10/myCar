@@ -22,7 +22,10 @@ export class Car {
   userId: number;
 
   @Column()
-  title: string;
+  title_ar: string;
+
+  @Column()
+  title_en: string;
 
   @Column()
   description: string;

@@ -66,9 +66,10 @@ export const getAllCars = async (
       .leftJoinAndSelect("carAttributes.attributeOption", "attributeOption");
 
     if (search) {
-      query = query.andWhere("car.title LIKE :search", {
-        search: `%${search}%`,
-      });
+      query = query.andWhere(
+        "(car.title_ar LIKE :search OR car.title_en LIKE :search)",
+        { search: `%${search}%` }
+      );
     }
 
     if (sort === "asc") {
@@ -316,7 +317,8 @@ export const createCar = async (
 ) => {
   try {
     const {
-      title,
+      title_ar,
+      title_en,
       description,
       usdPrice,
       sypPrice,
@@ -379,7 +381,8 @@ export const createCar = async (
 
     const newCar = carRepository.create({
       userId,
-      title,
+      title_ar,
+      title_en,
       description,
       images: req.files
         ? (req.files as Express.Multer.File[]).map(
@@ -458,7 +461,8 @@ export const updateCar = async (
   try {
     const { id } = req.params;
     const {
-      title,
+      title_ar,
+      title_en,
       description,
       usdPrice,
       sypPrice,
@@ -497,7 +501,8 @@ export const updateCar = async (
       );
     }
 
-    if (title) car.title = title;
+    if (title_ar) car.title_ar = title_ar;
+    if (title_en) car.title_en = title_en;
     if (description) car.description = description;
     if (usdPrice) car.usdPrice = Number(usdPrice);
     if (sypPrice) car.sypPrice = Number(sypPrice);
