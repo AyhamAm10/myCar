@@ -10,6 +10,7 @@ import { UnauthorizedError } from "../common/errors/http.error";
 import { APIError, HttpStatusCode } from "../common/errors/api.error";
 import { ErrorMessages } from "../common/errors/ErrorMessages";
 import * as bcrypt from "bcryptjs";
+import { PromotionRequest, TypePromotion } from "../entities/promotion-request";
 
 export class AuthController {
   private authService: AuthService;
@@ -80,8 +81,38 @@ export class AuthController {
 
   async getCurrentUser(req: Request, res: Response, next: NextFunction) {
     try {
+      const userId = req.user?.id;
+      const userRepository = AppDataSource.getRepository(User)
+      const promationRepository = AppDataSource.getRepository(PromotionRequest)
+      const user = await userRepository.findOne({
+        where: { id: userId },
+      });
+
+      if (!user) {
+        return res.status(404).json(ApiResponse.error("User not found"));
+      }
+
+      const promotionRequest = await promationRepository.findOne({
+        where: {
+          userId: userId,
+          requestType: TypePromotion.account,
+        },
+        order: {
+          createdAt: "DESC",
+        },
+      });
+
       const response = ApiResponse.success(
-        { user: req.user },
+        {
+          user,
+          verificationRequest: promotionRequest
+            ? {
+                id: promotionRequest.id,
+                status: promotionRequest.status,
+                createdAt: promotionRequest.createdAt,
+              }
+            : null,
+        },
         "Current user retrieved"
       );
 
@@ -159,7 +190,7 @@ export class AuthController {
           .status(HttpStatusCode.NOT_FOUND)
           .json({ message: "User not found" });
       }
-      
+
       const hashedPassword = await bcrypt.hash(newPassword, 10);
       user.passwordHash = hashedPassword;
       await userRepository.save(user);
