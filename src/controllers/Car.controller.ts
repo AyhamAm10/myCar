@@ -257,7 +257,7 @@ export const getCarById = async (
           : attr.attributeOption.value_en
         : attr.customValue,
       optionId: attr.attributeOption?.id,
-      attribute_data: attr.attribute, // includes options and parent
+      attribute_data: [attr.attribute], 
     })) || [];
 
     // Get favorite status
