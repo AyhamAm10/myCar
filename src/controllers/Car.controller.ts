@@ -62,6 +62,7 @@ export const getAllCars = async (
       .leftJoinAndSelect("car.carType", "carType")
       .leftJoinAndSelect("car.governorateInfo", "governorateInfo")
       .leftJoinAndSelect("car.attributes", "carAttributes")
+      .leftJoinAndSelect("car.promotionRequests", "promotion")
       .leftJoinAndSelect("carAttributes.attribute", "attribute")
       .leftJoinAndSelect("carAttributes.attributeOption", "attributeOption");
 
@@ -159,9 +160,12 @@ export const getAllCars = async (
         }));
       }
 
+      const hasPromotionRequest =
+    car.promotionRequests?.some((req) => req.status === "pending" || req.status === "approved") ?? false;
       return {
         ...car,
         attributes,
+        hasPromotionRequest
       };
     });
 
