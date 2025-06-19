@@ -24,7 +24,7 @@ export class Car {
   @Column()
   title_ar: string;
 
-  @Column()
+  @Column({nullable:true})
   title_en: string;
 
   @Column()

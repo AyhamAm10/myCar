@@ -230,6 +230,8 @@ export const getCarById = async (
         "governorateInfo",
         "attributes",
         "attributes.attribute",
+        "attributes.attribute.parent",
+        "attributes.attribute.options",
         "attributes.attributeOption",
         "promotionRequests",
       ],
@@ -242,41 +244,32 @@ export const getCarById = async (
       );
     }
 
+    await carRepository.increment({ id: car.id }, "viewsCount", 1);
     car.viewsCount += 1;
-    await carRepository.save(car);
 
-    const formattedAttributes = await Promise.all(
-      car.attributes?.map(async (attr) => {
-        const attribute = await attributeRepository.find({
-          where: { id: attr.attribute.id },
-          relations: ["options", "parent"],
-        });
-        return {
-          id: attr.id,
-          attributeId: attr.attribute?.id,
-          title:
-            lang == "ar" ? attr.attribute.title_ar : attr.attribute.title_en,
-          value: attr.attributeOption
-            ? lang == "ar"
-              ? attr.attributeOption.value_ar
-              : attr.attributeOption.value_en
-            : attr.customValue,
-          optionId: attr.attributeOption?.id,
-          attribute_data: attribute,
-        };
-      }) || []
-    );
+    const formattedAttributes = car.attributes?.map((attr) => ({
+      id: attr.id,
+      attributeId: attr.attribute?.id,
+      title: lang === "ar" ? attr.attribute?.title_ar : attr.attribute?.title_en,
+      value: attr.attributeOption
+        ? lang === "ar"
+          ? attr.attributeOption.value_ar
+          : attr.attributeOption.value_en
+        : attr.customValue,
+      optionId: attr.attributeOption?.id,
+      attribute_data: attr.attribute, // includes options and parent
+    })) || [];
 
-    let favoriteCarIds: number[] = [];
-
+    // Get favorite status
+    let isFavorite = false;
     if (userId) {
-      const favorites = await favoriteRepository.find({
-        where: { userId: userId },
+      const favorite = await favoriteRepository.findOne({
+        where: { userId, carId: car.id },
       });
-      favoriteCarIds = favorites.map((fav) => fav.carId);
+      isFavorite = !!favorite;
     }
 
-    // Get recommended cars (limit 3)
+    // Get recommended cars
     const recommendedCars = await carRepository.find({
       where: {
         carTypeId: car.carTypeId,
@@ -291,24 +284,23 @@ export const getCarById = async (
         "governorateInfo",
         "attributes",
         "attributes.attributeOption",
+        "attributes.attribute",
       ],
     });
 
-    const result = {
+    const responseData = {
       ...car,
       attributes: formattedAttributes,
-      isFavorite: userId ? favoriteCarIds.includes(car.id) : false,
+      isFavorite,
       recommended: recommendedCars,
     };
 
-    res
-      .status(HttpStatusCode.OK)
-      .json(
-        ApiResponse.success(
-          result,
-          ErrorMessages.generateErrorMessage(entity, "retrieved", lang)
-        )
-      );
+    res.status(HttpStatusCode.OK).json(
+      ApiResponse.success(
+        responseData,
+        ErrorMessages.generateErrorMessage(entity, "retrieved", lang)
+      )
+    );
   } catch (error) {
     next(error);
   }
@@ -334,13 +326,12 @@ export const createCar = async (
       attributes,
       promotion_request,
     } = req.body;
-    console.log(req.body)
     const userId = req.user?.id;
     const lang = req.headers["accept-language"] || "ar";
     const entityName = lang === "ar" ? "السيارة" : "car";
 
     const requiredFields = [
-      "title",
+      "title_ar",
       "description",
       "usdPrice",
       "carTypeId",
@@ -350,7 +341,6 @@ export const createCar = async (
       "long",
     ];
 
-    console.log(req.body);
     const missingFields = requiredFields.filter((field) => !req.body[field]);
 
     if (missingFields.length > 0) {
@@ -395,7 +385,7 @@ export const createCar = async (
           )
         : [],
       usdPrice: Number(usdPrice),
-      sypPrice: sypPrice ? Number(sypPrice) : Number(usdPrice) * 15000, // افتراضي إذا لم يتم التزويد
+      sypPrice: sypPrice ? Number(sypPrice) : Number(usdPrice) * 15000,
       carTypeId,
       governorateId: governorate,
       address,
@@ -411,7 +401,9 @@ export const createCar = async (
     let attributeList = [];
     if (attributes && attributes.length > 0) {
       const attributePromises = attributes.map(async (attr) => {
-        const attribute = await attributeRepository.findOneBy({ id: attr.id });
+        const attribute = await attributeRepository.findOne({
+          where: { id: attr.id },
+        });
         if (!attribute) {
           throw new APIError(
             HttpStatusCode.NOT_FOUND,
@@ -419,14 +411,21 @@ export const createCar = async (
           );
         }
 
-        const option = await optionRepository.findOne({
-          where: { id: attr.option_id },
-        });
+        let attributeOption = null;
+        let customValue = null;
+
+        if (attribute.input_type === "text") {
+          customValue = attr.value;
+        } else {
+          attributeOption = await optionRepository.findOne({
+            where: { id: attr.option_id },
+          });
+        }
 
         return attributeValueRepository.create({
-          attribute: attribute,
-          attributeOption: option || null,
-          customValue: attr.value,
+          attribute,
+          attributeOption,
+          customValue,
           car: savedCar,
         });
       });
@@ -445,18 +444,17 @@ export const createCar = async (
       await promationRepository.save(data);
     }
 
-    res
-      .status(HttpStatusCode.CREATED)
-      .json(
-        ApiResponse.success(
-          { car: newCar, attribute: attributeList },
-          ErrorMessages.generateErrorMessage(entityName, "created", lang)
-        )
-      );
+    res.status(HttpStatusCode.CREATED).json(
+      ApiResponse.success(
+        { car: newCar, attribute: attributeList },
+        ErrorMessages.generateErrorMessage(entityName, "created", lang)
+      )
+    );
   } catch (error) {
     next(error);
   }
 };
+
 
 export const updateCar = async (
   req: Request,
