@@ -11,7 +11,7 @@ import { Governorate } from "../entities/governorate";
 import { Attribute } from "../entities/Attributes";
 import { CarAttribute } from "../entities/car-attribute";
 import { AttributeOption } from "../entities/attribute-option";
-import { PromotionRequest } from "../entities/promotion-request";
+import { PromotionRequest, TypePromotion } from "../entities/promotion-request";
 import { Favorite } from "../entities/favorite";
 import { Not } from "typeorm";
 
@@ -445,7 +445,9 @@ export const createCar = async (
     if (promotion_request == "true") {
       const data = promationRepository.create({
         car: savedCar,
+        requestType:TypePromotion.listing,
         user,
+        
       });
 
       await promationRepository.save(data);
