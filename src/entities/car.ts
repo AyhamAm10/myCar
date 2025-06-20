@@ -71,7 +71,7 @@ export class Car {
   viewsCount: number;
 
   @Column()
-  modal_year: number;
+  modal_year: string;
 
   @Column({
     name: "created_at",

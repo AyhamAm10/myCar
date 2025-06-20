@@ -85,7 +85,7 @@ export const getAllCars = async (
     }
 
     if (modal_year) {
-      query = query.andWhere("car.modal_year = :modal_year",{ modal_year: Number(modal_year)});
+      query = query.andWhere("car.modal_year = :modal_year",{ modal_year});
     }
 
     if (carType) {
@@ -395,7 +395,7 @@ export const createCar = async (
       carTypeId,
       governorateId: governorate,
       address,
-      modal_year: Number(modal_year),
+      modal_year,
       lat: Number(lat),
       long: Number(long),
       user,
@@ -523,7 +523,7 @@ export const updateCar = async (
     if (isFeatured !== undefined) car.isFeatured = isFeatured;
     if (isVerified !== undefined) car.isVerified = isVerified;
     if (status) car.status = status;
-    if (modal_year) car.modal_year = Number(modal_year);
+    if (modal_year) car.modal_year = modal_year;
 
     if (req.files) {
       const files = (req.files as Express.Multer.File[]) || [];
