@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { Between } from "typeorm";
 import { AppDataSource } from "../config/data_source";
 import { Car } from "../entities/car";
-import { PromotionRequest } from "../entities/promotion-request";
+import { PromotionRequest, TypePromotion } from "../entities/promotion-request";
 import { Favorite } from "../entities/favorite";
 
 export const getHighlightedCars = async (req: Request, res: Response) => {
@@ -30,7 +30,7 @@ export const getHighlightedCars = async (req: Request, res: Response) => {
 
     const goldenPromoRequests = await promoRepo.find({
       where: {
-        requestType: "listing_promotion",
+        requestType: TypePromotion.listing,
         status: "approved",
       },
       relations: ["car"],
