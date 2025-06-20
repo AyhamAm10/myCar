@@ -442,7 +442,7 @@ export const createCar = async (
       );
     }
 
-    if (promotion_request) {
+    if (promotion_request == "true") {
       const data = promationRepository.create({
         car: savedCar,
         user,
