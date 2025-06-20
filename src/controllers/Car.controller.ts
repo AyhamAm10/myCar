@@ -85,7 +85,7 @@ export const getAllCars = async (
     }
 
     if (modal_year) {
-      query = query.andWhere("car.modal_year = :modal_year",{ modal_year});
+      query = query.andWhere("car.modal_year = :modal_year", { modal_year });
     }
 
     if (carType) {
@@ -166,11 +166,13 @@ export const getAllCars = async (
       }
 
       const hasPromotionRequest =
-    car.promotionRequests?.some((req) => req.status === "pending" || req.status === "approved") ?? false;
+        car.promotionRequests?.some(
+          (req) => req.status === "pending" || req.status === "approved"
+        ) ?? false;
       return {
         ...car,
         attributes,
-        hasPromotionRequest
+        hasPromotionRequest,
       };
     });
 
@@ -252,18 +254,20 @@ export const getCarById = async (
     await carRepository.increment({ id: car.id }, "viewsCount", 1);
     car.viewsCount += 1;
 
-    const formattedAttributes = car.attributes?.map((attr) => ({
-      id: attr.id,
-      attributeId: attr.attribute?.id,
-      title: lang === "ar" ? attr.attribute?.title_ar : attr.attribute?.title_en,
-      value: attr.attributeOption
-        ? lang === "ar"
-          ? attr.attributeOption.value_ar
-          : attr.attributeOption.value_en
-        : attr.customValue,
-      optionId: attr.attributeOption?.id,
-      attribute_data: attr.attribute, 
-    })) || [];
+    const formattedAttributes =
+      car.attributes?.map((attr) => ({
+        id: attr.id,
+        attributeId: attr.attribute?.id,
+        title:
+          lang === "ar" ? attr.attribute?.title_ar : attr.attribute?.title_en,
+        value: attr.attributeOption
+          ? lang === "ar"
+            ? attr.attributeOption.value_ar
+            : attr.attributeOption.value_en
+          : attr.customValue,
+        optionId: attr.attributeOption?.id,
+        attribute_data: attr.attribute,
+      })) || [];
 
     // Get favorite status
     let isFavorite = false;
@@ -300,12 +304,14 @@ export const getCarById = async (
       recommended: recommendedCars,
     };
 
-    res.status(HttpStatusCode.OK).json(
-      ApiResponse.success(
-        responseData,
-        ErrorMessages.generateErrorMessage(entity, "retrieved", lang)
-      )
-    );
+    res
+      .status(HttpStatusCode.OK)
+      .json(
+        ApiResponse.success(
+          responseData,
+          ErrorMessages.generateErrorMessage(entity, "retrieved", lang)
+        )
+      );
   } catch (error) {
     next(error);
   }
@@ -445,25 +451,25 @@ export const createCar = async (
     if (promotion_request == "true") {
       const data = promationRepository.create({
         car: savedCar,
-        requestType:TypePromotion.listing,
+        requestType: TypePromotion.listing,
         user,
-        
       });
 
       await promationRepository.save(data);
     }
 
-    res.status(HttpStatusCode.CREATED).json(
-      ApiResponse.success(
-        { car: newCar, attribute: attributeList },
-        ErrorMessages.generateErrorMessage(entityName, "created", lang)
-      )
-    );
+    res
+      .status(HttpStatusCode.CREATED)
+      .json(
+        ApiResponse.success(
+          { car: newCar, attribute: attributeList },
+          ErrorMessages.generateErrorMessage(entityName, "created", lang)
+        )
+      );
   } catch (error) {
     next(error);
   }
 };
-
 
 export const updateCar = async (
   req: Request,
@@ -489,6 +495,7 @@ export const updateCar = async (
       status,
       attributes,
       keepImages,
+      promotion_request,
     } = req.body;
 
     const lang = req.headers["accept-language"] || "ar";
@@ -585,7 +592,27 @@ export const updateCar = async (
       );
     }
 
-    await carRepository.save(car);
+    const savedCar = await carRepository.save(car)
+
+    if (promotion_request === "true") {
+      
+      const existingPromotion = await promationRepository.findOne({
+        where: { car: { id: savedCar.id }, user: { id: user.id } },
+      });
+      if (!existingPromotion) {
+        const data = promationRepository.create({
+          car: savedCar,
+          requestType: TypePromotion.listing,
+          user,
+        });
+        await promationRepository.save(data);
+      }
+    } else if (promotion_request === "false") {
+      await promationRepository.delete({
+        car: { id: savedCar.id },
+        user: { id: user.id },
+      });
+    }
 
     res
       .status(HttpStatusCode.OK)
