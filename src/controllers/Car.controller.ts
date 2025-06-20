@@ -321,6 +321,7 @@ export const createCar = async (
       carTypeId,
       governorate,
       address,
+      modal_year,
       lat,
       long,
       attributes,
@@ -389,6 +390,7 @@ export const createCar = async (
       carTypeId,
       governorateId: governorate,
       address,
+      modal_year,
       lat: Number(lat),
       long: Number(long),
       user,
@@ -476,6 +478,7 @@ export const updateCar = async (
       long,
       isFeatured,
       isVerified,
+      modal_year,
       status,
       attributes,
       keepImages,
@@ -515,6 +518,7 @@ export const updateCar = async (
     if (isFeatured !== undefined) car.isFeatured = isFeatured;
     if (isVerified !== undefined) car.isVerified = isVerified;
     if (status) car.status = status;
+    if (modal_year) car.modal_year = modal_year;
 
     if (req.files) {
       const files = (req.files as Express.Multer.File[]) || [];

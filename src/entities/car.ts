@@ -70,6 +70,9 @@ export class Car {
   @Column({ name: "views_count", default: 0 })
   viewsCount: number;
 
+  @Column()
+  modal_year: number;
+
   @Column({
     name: "created_at",
     type: "timestamp",
