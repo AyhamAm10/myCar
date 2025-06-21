@@ -6,7 +6,11 @@ import { PromotionRequest, TypePromotion } from "../entities/promotion-request";
 import { Favorite } from "../entities/favorite";
 import { AttributeSearchHistory } from "../entities/attribute-search-history";
 
-export const getHighlightedCars = async (req: Request, res: Response , next:NextFunction) => {
+export const getHighlightedCars = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const carRepo = AppDataSource.getRepository(Car);
     const promoRepo = AppDataSource.getRepository(PromotionRequest);
@@ -39,7 +43,12 @@ export const getHighlightedCars = async (req: Request, res: Response , next:Next
         requestType: TypePromotion.listing,
         status: "approved",
       },
-      relations: ["car", "car.attributes", "car.attributes.attribute", "car.attributes.attributeOption"],
+      relations: [
+        "car",
+        "car.attributes",
+        "car.attributes.attribute",
+        "car.attributes.attributeOption",
+      ],
       take: 20,
     });
 
@@ -72,21 +81,23 @@ export const getHighlightedCars = async (req: Request, res: Response , next:Next
       // ترتيب سيارات gold حسب سجل البحث
       if (validHistory.length > 0) {
         goldenCars.sort((a, b) => {
-          const aMatches = a.attributes?.filter((attr) =>
-            validHistory.some(
-              (h) =>
-                h.attributeId === attr.attribute?.id &&
-                h.optionId === attr.attributeOption?.id
-            )
-          ).length || 0;
+          const aMatches =
+            a.attributes?.filter((attr) =>
+              validHistory.some(
+                (h) =>
+                  h.attributeId === attr.attribute?.id &&
+                  h.optionId === attr.attributeOption?.id
+              )
+            ).length || 0;
 
-          const bMatches = b.attributes?.filter((attr) =>
-            validHistory.some(
-              (h) =>
-                h.attributeId === attr.attribute?.id &&
-                h.optionId === attr.attributeOption?.id
-            )
-          ).length || 0;
+          const bMatches =
+            b.attributes?.filter((attr) =>
+              validHistory.some(
+                (h) =>
+                  h.attributeId === attr.attribute?.id &&
+                  h.optionId === attr.attributeOption?.id
+              )
+            ).length || 0;
 
           return bMatches - aMatches;
         });
@@ -150,8 +161,6 @@ export const getHighlightedCars = async (req: Request, res: Response , next:Next
       today: updateTodayCars,
     });
   } catch (err) {
-    next(err)
+    next(err);
   }
 };
-
-
