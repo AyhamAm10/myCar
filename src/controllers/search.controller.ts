@@ -2,10 +2,11 @@ import { Request, Response, NextFunction } from "express";
 import { APIError, HttpStatusCode } from "../common/errors/api.error";
 import { AppDataSource } from "../config/data_source";
 import { Car } from "../entities/car";
-import { CarAttribute } from "../entities/car-attribute";
 import { ApiResponse } from "../common/responses/api.response";
 import { ErrorMessages } from "../common/errors/ErrorMessages";
 import { Favorite } from "../entities/favorite";
+import { Attribute, InputType } from "../entities/Attributes";
+import { AttributeSearchHistory } from "../entities/attribute-search-history";
 
 export class CarSearchController {
   async search(req: Request, res: Response, next: NextFunction) {
@@ -32,6 +33,23 @@ export class CarSearchController {
         .leftJoinAndSelect("car.carType", "carType")
         .leftJoinAndSelect("car.governorateInfo", "governorate");
 
+      // if (attributes && attributes.length > 0) {
+      //   attributes.forEach((attr, index) => {
+      //     const alias = `filter_attr_${index}`;
+
+      //     query.innerJoin(
+      //       "car.attributes",
+      //       alias,
+      //       `${alias}.attribute_id = :attrId${index} AND (${alias}.attribute_option_id = :optionId${index} OR ${alias}.custom_value = :customValue${index})`,
+      //       {
+      //         [`attrId${index}`]: attr.attribute_id,
+      //         [`optionId${index}`]: attr.value,
+      //         [`customValue${index}`]: attr.value,
+      //       }
+      //     );
+      //   });
+      // }
+
       if (attributes && attributes.length > 0) {
         attributes.forEach((attr, index) => {
           const alias = `filter_attr_${index}`;
@@ -47,6 +65,44 @@ export class CarSearchController {
             }
           );
         });
+
+        const attrRepo = AppDataSource.getRepository(Attribute);
+        const historyRepo = AppDataSource.getRepository(AttributeSearchHistory);
+        const userId = req.user?.id || null;
+
+        for (const attr of attributes) {
+          const attributeEntity = await attrRepo.findOne({
+            where: { id: attr.attribute_id },
+          });
+
+          if (
+            attributeEntity &&
+            attributeEntity.input_type === InputType.DROPDOWN  &&
+            userId
+          ) {
+            const existing = await historyRepo.findOne({
+              where: {
+                attribute: { id: attr.attribute_id },
+                attributeOption: { id: attr.value },
+                user:  { id: userId },
+              },
+              relations: ["attribute", "attributeOption", "user"],
+            });
+
+            if (existing) {
+              existing.count += 1;
+              existing.lastSearchedAt = new Date();
+              await historyRepo.save(existing);
+            } else {
+              const newHistory = historyRepo.create({
+                attribute: { id: attr.attribute_id },
+                attributeOption: { id: attr.value },
+                user: { id: userId },
+              });
+              await historyRepo.save(newHistory);
+            }
+          }
+        }
       }
 
       if (modal_year) {
