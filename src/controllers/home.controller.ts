@@ -31,13 +31,11 @@ export const getHighlightedCars = async (
         status: "active",
       },
       take: 10,
-      order: {
-        createdAt: "DESC",
-      },
+      order: { createdAt: "DESC" },
       relations: ["governorateInfo"],
     });
 
-    // استرجاع سيارات الذهب من الـ Promo
+    // السيارات المروّجة
     const goldenPromoRequests = await promoRepo.find({
       where: {
         requestType: TypePromotion.listing,
@@ -52,15 +50,15 @@ export const getHighlightedCars = async (
       take: 20,
     });
 
+    // السيارات الذهبية المفعلة فقط
     let goldenCars = goldenPromoRequests
       .map((req) => req.car)
-      .filter((car): car is Car => !!car && car.status === "active");
+      .filter((car) => car.status === "active");
 
     let highlightedCars: Car[] = [];
-
-    // سجل البحث
     let validHistory: { attributeId: number; optionId: number }[] = [];
 
+    // استرجاع سجل البحث للمستخدم
     if (currentUserId) {
       const searchHistory = await historyRepo.find({
         where: { user: { id: currentUserId } },
@@ -70,42 +68,33 @@ export const getHighlightedCars = async (
       });
 
       validHistory = searchHistory
-        .filter((h) => !!h.attributeOption?.id)
+        .filter((h) => h.attributeOption?.id)
         .map((h) => ({
           attributeId: h.attribute.id,
           optionId: h.attributeOption.id,
         }));
     }
 
+    // ترتيب السيارات الذهبية حسب سجل البحث
     if (goldenCars.length > 0) {
-      // ترتيب سيارات gold حسب سجل البحث
       if (validHistory.length > 0) {
         goldenCars.sort((a, b) => {
-          const aMatches =
-            a.attributes?.filter((attr) =>
+          const matchCount = (car: Car) =>
+            car.attributes?.filter((attr) =>
               validHistory.some(
                 (h) =>
                   h.attributeId === attr.attribute?.id &&
                   h.optionId === attr.attributeOption?.id
               )
-            ).length || 0;
+            ).length ?? 0;
 
-          const bMatches =
-            b.attributes?.filter((attr) =>
-              validHistory.some(
-                (h) =>
-                  h.attributeId === attr.attribute?.id &&
-                  h.optionId === attr.attributeOption?.id
-              )
-            ).length || 0;
-
-          return bMatches - aMatches;
+          return matchCount(b) - matchCount(a);
         });
       }
 
       highlightedCars = goldenCars.slice(0, 10);
     } else if (validHistory.length > 0) {
-      // جلب سيارات بناءً على البحث فقط
+      // استرجاع سيارات بناءً على سجل البحث فقط
       const query = carRepo
         .createQueryBuilder("car")
         .innerJoin("car.attributes", "carAttribute")
@@ -124,10 +113,10 @@ export const getHighlightedCars = async (
       });
 
       query.andWhere(conditions.join(" OR "), parameters).take(10);
-
       highlightedCars = await query.getMany();
     }
 
+    // إذا ما طلع شي، رجع أي سيارات عشوائية
     if (highlightedCars.length === 0) {
       highlightedCars = await carRepo.find({
         where: { status: "active" },
