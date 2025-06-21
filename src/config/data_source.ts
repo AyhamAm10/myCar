@@ -14,6 +14,7 @@ import { Notification } from "../entities/notification";
 import { PromotionRequest } from "../entities/promotion-request";
 import { User } from "../entities/user";
 import { Otp } from "../entities/otp";
+import { AttributeSearchHistory } from "../entities/attribute-search-history";
 
 dotenv.config();
 const { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME, NODE_ENV } =
@@ -43,7 +44,8 @@ export const AppDataSource = new DataSource({
     Notification,
     PromotionRequest,
     User,
-    Otp
+    Otp,
+    AttributeSearchHistory
   ],
 
   migrations: [__dirname + "/../migrations/*.ts"],
