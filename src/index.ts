@@ -78,7 +78,7 @@ if (Environment.isDevelopment() || Environment.isProduction()) {
         logger.error("Failed to create super admin:", error);
       }
 
-      app.listen(PORT, "0.0.0.0", () => {
+      app.listen(8800 , "0.0.0.0", () => {
         logger.info(`Server running at http://localhost:${PORT}`);
       });
     })
